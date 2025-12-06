@@ -4,9 +4,19 @@
   "private": true,
   "displayName": "Seamless Agent",
   "description": "Language Model tool that requires AI agents to confirm with users before completing tasks",
-  "version": "0.0.5",
-  "icon": "icon.png",
+  "version": "0.1.3",
+  "icon": "resources/icon.png",
   "author": "jraylan",
+  "contributors": [
+    {
+      "name": "Bernardo Pinho",
+      "url": "https://github.com/bicheichane"
+    },
+    {
+      "name": "Jefferson Raylan",
+      "url": "https://github.com/jraylan"
+    }
+  ],
   "license": "MIT",
   "main": "./dist/extension.js",
   "engines": {
@@ -36,11 +46,11 @@
   ],
   "contributes": {
     "viewsContainers": {
-      "panel": [
+      "activitybar": [
         {
           "id": "seamless-agent",
           "title": "Seamless Agent",
-          "icon": "$(comment-discussion)"
+          "icon": "resources/seamless-agent.svg"
         }
       ]
     },
@@ -49,7 +59,8 @@
         {
           "id": "seamlessAgentView",
           "name": "Seamless Agent",
-          "type": "webview"
+          "type": "webview",
+          "icon": "resources/seamless-agent.svg"
         }
       ]
     },
@@ -114,11 +125,12 @@
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.10.1",
     "@types/vscode": "^1.106.1",
-    "esbuild": "^0.27.0",
+    "esbuild": "^0.27.1",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.43",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0"
   }

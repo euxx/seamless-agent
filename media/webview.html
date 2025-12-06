@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} 'unsafe-inline'; font-src {{cspSource}}; script-src 'nonce-{{nonce}}';">
+    <link href="{{styleUri}}" rel="stylesheet">
+    <link href="{{highlightStyleUri}}" rel="stylesheet">
+    <link href="{{codiconsUri}}" rel="stylesheet">
+    <title>{{consoleTitle}}</title>
+</head>
+<body>
+    <div class="container">
+        <!-- Header - only shown when viewing a request -->
+        <div id="request-header" class="request-header hidden">
+            <button id="back-btn" class="btn-back" title="{{back}}">
+                <span class="codicon codicon-arrow-left"></span>
+            </button>
+            <h2 id="header-title"></h2>
+        </div>
+        
+        <!-- Empty state - shown when no requests pending -->
+        <div id="empty-state">
+            <p class="placeholder">{{noPendingRequests}}</p>
+        </div>
+        
+        <!-- Request list - shown when multiple requests -->
+        <div id="request-list" class="hidden">
+            <p class="section-title">{{pendingRequests}}</p>
+            <div id="request-list-items"></div>
+        </div>
+        
+        <!-- Request form - hidden until a question is selected -->
+        <div id="request-form" class="hidden">
+            <div class="question-section">
+                <div class="question-content" id="question-content"></div>
+            </div>
+            
+            <div class="response-section">
+                <label class="response-label" for="response-input">{{yourResponse}}</label>
+                <textarea 
+                    id="response-input" 
+                    placeholder="{{inputPlaceholder}}"
+                    rows="5"
+                ></textarea>
+            </div>
+            
+            <!-- Attachments section -->
+            <div class="attachments-section">
+                <label class="attachments-label">{{attachments}}</label>
+                <div id="attachments-list" class="attachments-list">
+                    <p class="no-attachments">{{noAttachments}}</p>
+                </div>
+                <button type="button" id="add-attachment-btn" class="btn-add-attachment">
+                    <span class="codicon codicon-add"></span> {{addAttachment}}
+                </button>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" id="submit-btn" class="btn-primary">{{submit}}</button>
+                <button type="button" id="cancel-btn" class="btn-secondary">{{cancel}}</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Store strings for JS -->
+    <script nonce="{{nonce}}">
+        window.__STRINGS__ = {
+            noAttachments: "{{noAttachments}}",
+            remove: "{{remove}}",
+            justNow: "{{justNow}}",
+            minutesAgo: "{{minutesAgo}}",
+            hoursAgo: "{{hoursAgo}}",
+            daysAgo: "{{daysAgo}}"
+        };
+    </script>
+    <script nonce="{{nonce}}" src="{{scriptUri}}"></script>
+</body>
+</html>

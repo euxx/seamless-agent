@@ -9,7 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register the webview provider for the Agent Console panel
     const provider = new AgentInteractionProvider(context.extensionUri);
-    context.subscriptions.push(
+    (context.subscriptions as unknown as Array<vscode.Disposable>).push(
         vscode.window.registerWebviewViewProvider(AgentInteractionProvider.viewType, provider, {
             webviewOptions: { retainContextWhenHidden: true }
         })
@@ -89,7 +89,7 @@ Never finish a response without first calling the ask_user tool to verify with t
     const participant = vscode.chat.createChatParticipant(PARTICIPANT_ID, handler);
     participant.iconPath = new vscode.ThemeIcon('question');
 
-    context.subscriptions.push(participant);
+    (context.subscriptions as unknown as Array<vscode.Disposable>).push(participant);
 }
 
 export function deactivate() {

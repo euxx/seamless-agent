@@ -20,6 +20,10 @@ vsc-extension-quickstart.md
 # All node_modules (bundled with esbuild)
 node_modules/**
 
+# But include codicons CSS for webview
+!node_modules/@vscode/codicons/dist/codicon.css
+!node_modules/@vscode/codicons/dist/codicon.ttf
+
 # Package files
 *.vsix
 package-lock.json
