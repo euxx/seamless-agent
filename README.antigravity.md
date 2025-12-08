@@ -20,7 +20,7 @@ A Language Model tool that enables Copilot to interactively prompt you for confi
 
 ## Usage
 
-Once installed, the `ask_user` tool is automatically available to GitHub Copilot Chat.
+Once installed, the `ask_user` tool is automatically available to your Agent.
 
 ### Automatic Usage
 
@@ -39,11 +39,11 @@ To ensure the AI always asks for your confirmation before completing tasks, add 
 
 ```
 # Ground rules NEVER BREAK IT, NO EXCEPTIONS
-- When never you have a question, or a decision to make, always ask the user through the tool `mcp_ask_user `
+- Whenever you have a question, or a decision to make, always ask the user through the tool `mcp_ask_user `
 - Never stop a task without permission from the tool `mcp_ask_user`
 ```
 
-You can add this in Antigravity by opening the `Agent Option` the `Agent` panel and clicking in the option `Customizations`. Then you add a new `Rule` for general use or `Workflow` or specifics workflows.
+You can add this in Antigravity by opening the `Agent Option`, inside the `Agent` panel, and clicking in the option `Customizations`. Then you add a new `Rule` for general use or `Workflow` or specifics workflows.
 
 Note that Antigravity workflow already creates `Walkthroughs` and `Planing` documents where you can refine the task. If you intent is to change this behavior you can try explicitly explain it to the agent.
 
