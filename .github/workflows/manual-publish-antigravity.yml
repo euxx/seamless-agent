@@ -32,7 +32,7 @@ jobs:
         run: npm install ovsx
 
       - name: Build Antigravity
-        run: npm run build:antigravity
+        run: npm run compile:antigravity
 
       - name: Pack Antigravity
         run: npm run package:ovsx
@@ -48,7 +48,7 @@ jobs:
         env:
           OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
 
-      - name: Publish to Open VSX
+      - name: Publish to Open VSX (Pre-release)
         if: ${{ inputs.pre-release }}
         run: npx ovsx publish --pre-release seamless-agent-*-antigravity.vsix
         env:

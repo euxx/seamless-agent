@@ -57,7 +57,7 @@ jobs:
         run: rm -rf dist/*
 
       - name: Build Antigravity
-        run: npm run build:antigravity
+        run: npm run compile:antigravity
 
       - name: Pack Antigravity
         run: npm run package:ovsx
