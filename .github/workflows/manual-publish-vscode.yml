@@ -16,6 +16,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,3 +55,14 @@ jobs:
         run: vsce publish --pre-release
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+
+      - name: Upload VSIX Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: seamless-agent-vsix
+          path: seamless-agent-*.vsix
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: "seamless-agent-*.vsix"

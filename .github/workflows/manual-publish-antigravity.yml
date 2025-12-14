@@ -16,6 +16,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,3 +52,8 @@ jobs:
         run: npx ovsx publish --pre-release seamless-agent-*-antigravity.vsix
         env:
           OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: "${{ github.workspace }}/*.vsix"
