@@ -11,7 +11,8 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Seamless Agent extension active');
 
     // Register the webview provider for the Agent Console panel
-    const provider = new AgentInteractionProvider(context.extensionUri);
+    const provider = new AgentInteractionProvider(context);
+    provider.loadSessionsFromDisk(); // Restore interaction history from disk
     agentProvider = provider; // Store reference for deactivation cleanup
 
     (context.subscriptions as unknown as Array<vscode.Disposable>).push(
