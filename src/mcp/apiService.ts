@@ -2,8 +2,9 @@ import * as vscode from 'vscode';
 import * as http from 'http';
 import * as crypto from 'crypto';
 import { AgentInteractionProvider } from '../webview/webviewProvider';
-import { askUser, planReview } from '../tools';
+import { askUser, closeTaskList, createTaskList, getNextTask, planReview, updateTaskStatus } from '../tools';
 import { PlanReviewInput, parsePlanReviewInput } from '../tools/schemas';
+import { CreateTaskListInput, parseCreateTaskListInput, GetNextTaskInput, parseGetNextTaskInput, UpdateTaskStatusInput, parseUpdateTaskStatusInput, CloseTaskListInput, parseCloseTaskListInput } from '../tools/taskListFlowSchemas';
 
 export { planReviewApproval, walkthroughReview } from '../tools/planReview';
 export { initializeTaskListStorage, getTaskListStorage } from '../tools/taskList';
@@ -64,6 +65,24 @@ export class ApiServiceManager {
                     if (url === '/plan_review' && req.method === 'POST') {
                         await this.handlePlanReview(req, res);
                         return;
+                    }
+
+                    // Task list endpoints
+                    if (url === '/create_task_list' && req.method === 'POST') {
+                        await this.handleCreateTaskList(req, res);
+                        return
+                    }
+                    if (url === '/get_next_task' && req.method === 'POST') {
+                        await this.handleGetNextTask(req, res);
+                        return
+                    }
+                    if (url === '/update_task_status' && req.method === 'POST') {
+                        await this.handleUpdateTaskStatus(req, res);
+                        return
+                    }
+                    if (url === '/close_task_list' && req.method === 'POST') {
+                        await this.handleCloseTaskList(req, res);
+                        return
                     }
 
                     res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -246,6 +265,240 @@ export class ApiServiceManager {
         }
     }
 
+    private async handleCreateTaskList(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+        if (!this.isAuthorized(req)) {
+            res.writeHead(401, {
+                'Content-Type': 'application/json',
+                'WWW-Authenticate': 'Bearer'
+            });
+            res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+        }
+
+        const contentType = req.headers['content-type'];
+        const contentTypeValue = Array.isArray(contentType) ? contentType[0] : contentType;
+        if (!contentTypeValue || !contentTypeValue.toLowerCase().startsWith('application/json')) {
+            res.writeHead(415, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unsupported Media Type. Use application/json' }));
+            return;
+        }
+        let body: string;
+        try {
+            body = await this.readRequestBody(req, MAX_REQUEST_BODY_BYTES);
+        } catch {
+            res.writeHead(413, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Request body too large' }));
+            return;
+        }
+
+        let params: CreateTaskListInput;
+        try {
+            const parsed = JSON.parse(body);
+            params = parseCreateTaskListInput(parsed);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Invalid input';
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Validation error: ${errorMessage}` }));
+            return;
+        }
+        const tokenSource = new vscode.CancellationTokenSource();
+        try {
+            const result = await createTaskList(
+                params,
+                this.context,
+                this.provider
+            );
+
+            if ((result as any).error) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: (result as any).error }));
+            } else {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            }
+        } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Error: ${error}` }));
+        } finally {
+            tokenSource.dispose();
+        }
+    }
+
+    private async handleGetNextTask(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+        if (!this.isAuthorized(req)) {
+            res.writeHead(401, {
+                'Content-Type': 'application/json',
+                'WWW-Authenticate': 'Bearer'
+            });
+            res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+        }
+
+        const contentType = req.headers['content-type'];
+        const contentTypeValue = Array.isArray(contentType) ? contentType[0] : contentType;
+        if (!contentTypeValue || !contentTypeValue.toLowerCase().startsWith('application/json')) {
+            res.writeHead(415, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unsupported Media Type. Use application/json' }));
+            return;
+        }
+        let body: string;
+        try {
+            body = await this.readRequestBody(req, MAX_REQUEST_BODY_BYTES);
+        } catch {
+            res.writeHead(413, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Request body too large' }));
+            return;
+        }
+
+        let params: GetNextTaskInput;
+        try {
+            const parsed = JSON.parse(body);
+            params = parseGetNextTaskInput(parsed);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Invalid input';
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Validation error: ${errorMessage}` }));
+            return;
+        }
+        const tokenSource = new vscode.CancellationTokenSource();
+        try {
+            const result = await getNextTask(
+                params,
+                this.context,
+                this.provider
+            );
+
+            if ((result as any).error) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: (result as any).error }));
+            } else {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            }
+        } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Error: ${error}` }));
+        } finally {
+            tokenSource.dispose();
+        }
+    }
+    private async handleUpdateTaskStatus(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+        if (!this.isAuthorized(req)) {
+            res.writeHead(401, {
+                'Content-Type': 'application/json',
+                'WWW-Authenticate': 'Bearer'
+            });
+            res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+        }
+
+        const contentType = req.headers['content-type'];
+        const contentTypeValue = Array.isArray(contentType) ? contentType[0] : contentType;
+        if (!contentTypeValue || !contentTypeValue.toLowerCase().startsWith('application/json')) {
+            res.writeHead(415, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unsupported Media Type. Use application/json' }));
+            return;
+        }
+        let body: string;
+        try {
+            body = await this.readRequestBody(req, MAX_REQUEST_BODY_BYTES);
+        } catch {
+            res.writeHead(413, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Request body too large' }));
+            return;
+        }
+
+        let params: UpdateTaskStatusInput;
+        try {
+            const parsed = JSON.parse(body);
+            params = parseUpdateTaskStatusInput(parsed);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Invalid input';
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Validation error: ${errorMessage}` }));
+            return;
+        }
+        const tokenSource = new vscode.CancellationTokenSource();
+        try {
+            const result = await updateTaskStatus(
+                params,
+                this.context,
+                this.provider
+            );
+
+            if ((result as any).error) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: (result as any).error }));
+            } else {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            }
+        } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Error: ${error}` }));
+        } finally {
+            tokenSource.dispose();
+        }
+    }
+
+    private async handleCloseTaskList(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+        if (!this.isAuthorized(req)) {
+            res.writeHead(401, {
+                'Content-Type': 'application/json',
+                'WWW-Authenticate': 'Bearer'
+            });
+            res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+        }
+
+        const contentType = req.headers['content-type'];
+        const contentTypeValue = Array.isArray(contentType) ? contentType[0] : contentType;
+        if (!contentTypeValue || !contentTypeValue.toLowerCase().startsWith('application/json')) {
+            res.writeHead(415, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unsupported Media Type. Use application/json' }));
+            return;
+        }
+        let body: string;
+        try {
+            body = await this.readRequestBody(req, MAX_REQUEST_BODY_BYTES);
+        } catch {
+            res.writeHead(413, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Request body too large' }));
+            return;
+        }
+
+        let params: CloseTaskListInput;
+        try {
+            const parsed = JSON.parse(body);
+            params = parseCloseTaskListInput(parsed);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Invalid input';
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Validation error: ${errorMessage}` }));
+            return;
+        }
+        const tokenSource = new vscode.CancellationTokenSource();
+        try {
+            const result = await closeTaskList(
+                params,
+                this.context,
+                this.provider
+            );
+
+            if ((result as any).error) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: (result as any).error }));
+            } else {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(result));
+            }
+        } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Error: ${error}` }));
+        } finally {
+            tokenSource.dispose();
+        }
+    }
     /**
      * Read request body as string
      */
