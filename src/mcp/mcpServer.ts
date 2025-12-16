@@ -8,7 +8,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import { AgentInteractionProvider } from '../webview/webviewProvider';
-import { askUser } from '../tools';
+import { askUser, planReviewApproval, walkthroughReview } from '../tools';
 
 export class McpServerManager {
     private server: http.Server | undefined;
@@ -76,6 +76,93 @@ export class McpServerManager {
                 }
             );
 
+            // Register plan_review tool (explicit: plan approval)
+            this.mcpServer.registerTool(
+                "plan_review",
+                {
+                    inputSchema: z.object({
+                        plan: z.string().describe("The detailed plan in Markdown format to present to the user for review"),
+                        title: z.string().optional().describe("Optional title for the review panel"),
+                        chatId: z.string().optional().describe("Optional chat session ID for grouping reviews")
+                    })
+                },
+                async (args: any, { signal }: { signal?: AbortSignal }) => {
+                    // Convert MCP cancellation token to VS Code cancellation token
+                    const tokenSource = new vscode.CancellationTokenSource();
+                    if (signal) {
+                        signal.onabort = () => tokenSource.cancel();
+                    }
+
+                    // Validate args
+                    if (!args || typeof args !== 'object' || !('plan' in args)) {
+                        throw new Error('Invalid arguments: plan is required');
+                    }
+
+                    const result = await planReviewApproval(
+                        {
+                            plan: String(args.plan),
+                            title: args.title ? String(args.title) : undefined,
+                            chatId: args.chatId ? String(args.chatId) : undefined
+                        },
+                        this.context,
+                        this.provider,
+                        tokenSource.token
+                    );
+
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify(result)
+                            }
+                        ]
+                    };
+                }
+            );
+
+            // Register walkthrough_review tool (explicit: walkthrough review mode)
+            this.mcpServer.registerTool(
+                "walkthrough_review",
+                {
+                    inputSchema: z.object({
+                        plan: z.string().describe("The walkthrough content in Markdown format to present to the user"),
+                        title: z.string().optional().describe("Optional title for the walkthrough panel"),
+                        chatId: z.string().optional().describe("Optional chat session ID for grouping walkthroughs")
+                    })
+                },
+                async (args: any, { signal }: { signal?: AbortSignal }) => {
+                    const tokenSource = new vscode.CancellationTokenSource();
+                    if (signal) {
+                        signal.onabort = () => tokenSource.cancel();
+                    }
+
+                    if (!args || typeof args !== 'object' || !('plan' in args)) {
+                        throw new Error('Invalid arguments: plan is required');
+                    }
+
+                    const result = await walkthroughReview(
+                        {
+                            plan: String(args.plan),
+                            title: args.title ? String(args.title) : undefined,
+                            chatId: args.chatId ? String(args.chatId) : undefined
+                        },
+                        this.context,
+                        this.provider,
+                        tokenSource.token
+                    );
+
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify(result)
+                            }
+                        ]
+                    };
+                }
+            );
+
+            // -----------------------------
             // Create transport
             this.transport = new StreamableHTTPServerTransport({
                 sessionIdGenerator: () => `sess_${crypto.randomUUID()}`

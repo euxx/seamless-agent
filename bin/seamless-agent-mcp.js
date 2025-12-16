@@ -81,13 +81,15 @@ async function main() {
     });
 
     // Register ask_user tool
-    server.tool(
+    server.registerTool(
         'ask_user',
-        'Ask the user to confirm an action or decision. Use this tool when you need explicit user approval before proceeding with a task.',
         {
-            question: z.string().describe('The question or prompt to display to the user for confirmation'),
-            title: z.string().optional().describe('Optional custom title for the confirmation dialog'),
-            agentName: z.string().optional().describe('Your agent name'),
+            description: 'Ask the user to confirm an action or decision. Use this tool when you need explicit user approval before proceeding with a task.',
+            inputSchema: z.object({
+                question: z.string().describe('The question or prompt to display to the user for confirmation'),
+                title: z.string().optional().describe('Optional custom title for the confirmation dialog'),
+                agentName: z.string().optional().describe('Your agent name'),
+            })
         },
         async (args) => {
             try {
@@ -114,6 +116,101 @@ async function main() {
                                 responded: false,
                                 response: `Error: ${error.message}`,
                                 attachments: [],
+                            }),
+                        },
+                    ],
+                    isError: true,
+                };
+            }
+        }
+    );
+
+    // Register plan_review tool
+    server.registerTool(
+        'plan_review',
+        {
+            description: "Present a plan to the user for approval (review mode).",
+            inputSchema: z.object({
+                plan: z.string().describe('The detailed plan in Markdown format to present to the user for review. Use headers, bullet points, and code blocks for clarity.'),
+                title: z.string().optional().describe('Optional title for the review panel. Defaults to "Review Plan".'),
+                chatId: z.string().optional().describe('Optional chat ID to associate the review with a specific conversation.'),
+            })
+        },
+        async (args) => {
+            try {
+                const result = await callExtensionApi(port, token, '/plan_review', {
+                    plan: args.plan,
+                    title: args.title,
+                    mode: 'review',
+                    chatId: args.chatId,
+                });
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(result),
+                        },
+                    ],
+                };
+            } catch (error) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({
+                                status: 'cancelled',
+                                comments: [],
+                                reviewId: '',
+                                error: `Error: ${error.message}`,
+                            }),
+                        },
+                    ],
+                    isError: true,
+                };
+            }
+        }
+    );
+
+
+    // Register plan_review tool
+    server.registerTool(
+        'walkthrough_review',
+        {
+            description: "Present content as a walkthrough (step-by-step guide) in a dedicated panel with comment support.",
+            inputSchema: z.object({
+                plan: z.string().describe('The detailed plan in Markdown format to present to the user for review. Use headers, bullet points, and code blocks for clarity.'),
+                title: z.string().optional().describe('Optional title for the review panel. Defaults to "Review Plan".'),
+                chatId: z.string().optional().describe('Optional chat ID to associate the review with a specific conversation.'),
+            })
+        },
+        async (args) => {
+            try {
+                const result = await callExtensionApi(port, token, '/plan_review', {
+                    plan: args.plan,
+                    title: args.title,
+                    mode: 'walkthrough',
+                    chatId: args.chatId,
+                });
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(result),
+                        },
+                    ],
+                };
+            } catch (error) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({
+                                status: 'cancelled',
+                                comments: [],
+                                reviewId: '',
+                                error: `Error: ${error.message}`,
                             }),
                         },
                     ],
