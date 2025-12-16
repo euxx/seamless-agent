@@ -130,7 +130,7 @@ declare global {
                 secondary: { icon: 'codicon-edit', text: strings.reject, action: 'reject' }
             },
             'walkthrough': {
-                primary: { icon: 'codicon-check', text: strings.done, action: 'acknowledge' },
+                primary: { icon: 'codicon-check', text: strings.done, action: 'approve' },
                 secondary: { icon: 'codicon-edit', text: strings.reject, action: 'reject' }
             }
         };
