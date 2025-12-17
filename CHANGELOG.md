@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.14](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.13...seamless-agent-v0.1.14) (2025-12-17)
+
+
+### Bug Fixes
+
+* Restored askUser modelsDescription ([207102f](https://github.com/jraylan/seamless-agent/commit/207102f911b051beb7288303925df14e62fc6595))
+
 ## [0.1.13](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.12...seamless-agent-v0.1.13) (2025-12-17)
 
 
