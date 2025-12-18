@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.15](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.14...seamless-agent-v0.1.15) (2025-12-18)
+
+
+### Bug Fixes
+
+* Fix `ask_user` history layout. ([51b9d54](https://github.com/jraylan/seamless-agent/commit/51b9d544e3c4912bfa501c48e7b3b01f094c3c25)), closes [#33](https://github.com/jraylan/seamless-agent/issues/33)
+* Fix ask_user history type. Now it correctly saves the agent name. ([54a7281](https://github.com/jraylan/seamless-agent/commit/54a7281f32476f3ac81fa6a374babbc01b377ebe))
+* Fix image attachment ([e86f5fe](https://github.com/jraylan/seamless-agent/commit/e86f5feb061c712b4f99756c97d08a35a5eade1a)), closes [#35](https://github.com/jraylan/seamless-agent/issues/35)
+
 ## [0.1.14](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.13...seamless-agent-v0.1.14) (2025-12-17)
 
 
