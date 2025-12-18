@@ -45,6 +45,7 @@ export interface RequestItem {
     question: string;
     title: string;
     createdAt: number;
+    agentName: string | undefined;
     attachments: AttachmentInfo[];
 }
 

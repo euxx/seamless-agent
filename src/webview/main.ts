@@ -832,16 +832,14 @@ import type {
             title: string;
             preview: string;
             status?: string;
-        }
-
-            ;
+        };
 
         const entries: UnifiedEntry[] = [];
 
         for (const interaction of interactions || []) {
             const isPlanReview = interaction.type === 'plan_review';
 
-            const title = isPlanReview ? (interaction.title || 'Plan Review') : (interaction.agentName ? `${interaction.agentName}` : 'Ask User');
+            const title = isPlanReview ? (interaction.title || 'Plan Review') : (interaction.agentName ?? interaction.question ?? 'Ask User');
             const preview = isPlanReview ? truncate(interaction.plan || '', 80) : truncate(interaction.question || '', 80);
 
             entries.push({

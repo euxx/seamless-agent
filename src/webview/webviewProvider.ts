@@ -81,7 +81,8 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
 
     resolveWebviewView(webviewView: vscode.WebviewView,
         context: vscode.WebviewViewResolveContext,
-        token: vscode.CancellationToken): void {
+        token: vscode.CancellationToken,
+    ): void {
         this._view = webviewView;
 
         webviewView.webview.options = {
@@ -89,18 +90,14 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [vscode.Uri.joinPath(this._extensionUri, 'media'),
             vscode.Uri.joinPath(this._extensionUri, 'dist'),
             vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode', 'codicons', 'dist')]
-        }
-
-            ;
+        };
 
         webviewView.webview.html = this._getHtmlContent(webviewView.webview);
 
         // Handle messages from the webview
         webviewView.webview.onDidReceiveMessage((message: FromWebviewMessage) => {
             void this._handleWebviewMessage(message);
-        },
-            undefined,
-            []);
+        }, undefined, []);
 
         // Always show home view first (which includes pending requests and recent sessions)
         this._showHome();
@@ -115,7 +112,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
      * Wait for a user response to a question.
      * Supports multiple concurrent requests.
      */
-    public async waitForUserResponse(question: string, title?: string): Promise<UserResponseResult> {
+    public async waitForUserResponse(question: string, title?: string, agentName?: string, requestId?: string): Promise<UserResponseResult> {
 
         // If the view isn't available, try to open it
         if (!this._view) {
@@ -130,47 +127,40 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 if (!this._view) {
                     return {
                         responded: false, response: 'Agent Console view is not available.', attachments: []
-                    }
-
-                        ;
+                    };
                 }
             }
 
             catch (error) {
                 return {
                     responded: false, response: 'Agent Console view is not available.', attachments: []
-                }
-
-                    ;
+                };
             }
         }
 
         // Generate unique ID for this request
-        const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        const req = requestId ?? `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+        console.log(req)
 
         return new Promise<UserResponseResult>((resolve) => {
             const item: RequestItem = {
-                id: requestId,
+                id: req,
                 question,
                 title: title || strings.confirmationRequired,
                 createdAt: Date.now(),
-                attachments: []
-            }
+                attachments: [],
+                agentName,
+            };
 
-                ;
-
-            this._pendingRequests.set(requestId, {
-                item, resolve
-            }
-
-            );
+            this._pendingRequests.set(req, { item, resolve });
 
             // Update badge count
             this._setBadge(this._pendingRequests.size);
 
             // If this is the first/only request, show it directly
             if (this._pendingRequests.size === 1) {
-                this._selectedRequestId = requestId;
+                this._selectedRequestId = req;
                 this._showQuestion(item);
             }
 
@@ -976,6 +966,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 this._chatHistoryStorage.saveAskUserInteraction({
                     question: pending.item.question,
                     title: pending.item.title,
+                    agentName: pending.item.agentName,
                     response: result.responded ? result.response : strings.cancelled,
                     attachments: (result.attachments || []).map(a => a.uri)
                 });

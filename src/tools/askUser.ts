@@ -30,7 +30,7 @@ export async function askUser(
 
     try {
         // Execute Logic - Try webview first, fall back to VS Code dialogs
-        const result = await askViaWebview(provider, question, title, requestId, token);
+        const result = await askViaWebview(provider, question, title, agentName, requestId, token);
 
         return {
             responded: result.responded,
@@ -51,6 +51,7 @@ async function askViaWebview(
     provider: AgentInteractionProvider,
     question: string,
     title: string,
+    agentName: string,
     requestId: string,
     token: vscode.CancellationToken
 ): Promise<UserResponseResult> {
@@ -79,7 +80,7 @@ async function askViaWebview(
         });
 
         // Start the actual request
-        provider.waitForUserResponse(question, title).then(result => {
+        provider.waitForUserResponse(question, title, agentName, requestId).then(result => {
             cancellationListener.dispose();
 
             // If webview wasn't available, fall back to the old dialog approach
