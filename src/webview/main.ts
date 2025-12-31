@@ -210,7 +210,7 @@ import type {
 
         const base = btn.getAttribute('data-label') || btn.getAttribute('aria-label') || '';
 
-        const withCount = count > 0 ? `${base}(${count})` : base;
+        const withCount = count > 0 ? `${base} (${count})` : base;
         btn.setAttribute('title', withCount);
         btn.setAttribute('aria-label', withCount);
     }
