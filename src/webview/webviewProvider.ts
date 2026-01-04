@@ -20,6 +20,7 @@ import {
     FileSearchResult,
     UserResponseResult,
 } from "./types";
+import { truncate } from './utils';
 
 
 export class AgentInteractionProvider implements vscode.WebviewViewProvider {
@@ -245,9 +246,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             question: item.question,
             title: item.title,
             requestId: item.id
-        }
-
-            ;
+        };
         this._view?.webview.postMessage(message);
     }
 
@@ -259,9 +258,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
 
         const message: ToWebviewMessage = {
             type: 'showList', requests
-        }
-
-            ;
+        };
         this._view?.webview.postMessage(message);
     }
 
@@ -318,9 +315,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
     public clear(): void {
         const message: ToWebviewMessage = {
             type: 'clear'
-        }
-
-            ;
+        };
         this._view?.webview.postMessage(message);
     }
 
@@ -389,7 +384,53 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 break;
             case 'deleteInteraction': this._handleDeleteInteraction(message.interactionId);
                 break;
+            case 'cancelPendingRequest': {
+                this.cancelPendingRequest(message.requestId);
+                break;
+            }
         }
+    }
+
+
+    private getPendingInteraction(requestId: string) {
+        return this._pendingRequests.get(requestId)?.item || this._chatHistoryStorage.getPendingInteraction(requestId);
+    }
+
+    private cancelPendingRequest(requestId: string) {
+        const interaction = this.getPendingInteraction(requestId);
+        if (!interaction) {
+            vscode.window.showWarningMessage(strings.noSuchInteraction);
+            return;
+        }
+
+        const title = truncate(interaction.title ?? interaction.question ?? requestId, 80);
+
+        vscode.window.showWarningMessage(
+            strings.confirmCancelPending.replace('{0}', title),
+            { modal: true },
+            strings.close
+        ).then(async (result) => {
+            try {
+                if (result !== strings.close) {
+                    return;
+                }
+                const canceled = this.cancelRequest(requestId);
+                if (!canceled) {
+                    await this.cancelReview(requestId);
+                }
+            } finally {
+                this._showHome();
+            }
+        });
+    }
+
+    private async cancelReview(panelId: string): Promise<boolean> {
+        const { PlanReviewPanel } = await import('./planReviewPanel');
+        const closed = PlanReviewPanel.closeIfOpen(panelId);
+        if (!closed) {
+            this._chatHistoryStorage.updateInteraction(panelId, { status: 'cancelled' });
+        }
+        return closed;
     }
 
     /**
@@ -450,9 +491,8 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                     id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
                     name: cleanName,
                     uri: uri.toString()
-                }
+                };
 
-                    ;
                 pending.item.attachments.push(attachment);
             }
 
@@ -591,9 +631,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             isFolder: true,
             folderPath: selectedFolder.uri.fsPath,
             depth: selectedDepth.depth
-        }
-
-            ;
+        };
 
         pending.item.attachments.push(attachment);
 
@@ -723,9 +761,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             isFolder: isFolder,
             folderPath: isFolder ? file.path : undefined,
             depth: isFolder ? -1 : undefined // Default to recursive for autocomplete-added folders
-        }
-
-            ;
+        };
 
         // Add to pending request attachments
         pending.item.attachments.push(attachment);
@@ -817,9 +853,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 'image/webp': '.webp',
                 'image/bmp': '.bmp',
                 'image/svg+xml': '.svg'
-            }
-
-                ;
+            };
             const ext = extMap[effectiveMimeType] || '.png';
 
             // Use VS Code storage for temp images
@@ -1201,6 +1235,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{pastedImage}}': strings.pastedImage,
             '{{submit}}': strings.submit,
             '{{cancel}}': strings.cancel,
+            '{{close}}': strings.close,
             '{{remove}}': strings.remove,
             '{{justNow}}': strings.justNow,
             '{{minutesAgo}}': strings.minutesAgo,
@@ -1340,9 +1375,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             'zip': 'file-zip',
             'tar': 'file-zip',
             'gz': 'file-zip',
-        }
-
-            ;
+        };
         return iconMap[ext] || 'file';
     }
 }
