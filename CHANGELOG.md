@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.18](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.17...seamless-agent-v0.1.18) (2026-01-04)
+
+
+### Features
+
+* Add delete buttons to pending notification cards ([9acbedc](https://github.com/jraylan/seamless-agent/commit/9acbedc610cc5c056940c9f50ed4354d674e781f))
+* Add Delete Buttons to Pending Notification Cards ([c0a0216](https://github.com/jraylan/seamless-agent/commit/c0a02161b97bed88217589695ebe4de9dc265da4))
+
+
+### Bug Fixes
+
+* Fix tab item title spacing ([3e1d078](https://github.com/jraylan/seamless-agent/commit/3e1d0785b2c5978a2404779063f70ccf7a0244e0))
+
 ## [0.1.17](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.16...seamless-agent-v0.1.17) (2025-12-31)
 
 
