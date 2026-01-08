@@ -303,7 +303,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.24.3",
+    "@modelcontextprotocol/sdk": "^1.25.2",
     "@vscode/codicons": "^0.0.43",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",
