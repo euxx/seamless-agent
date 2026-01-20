@@ -112,6 +112,17 @@
           "default": "workspace",
           "title": "%config.storageContext.title%",
           "markdownDescription": "%config.storageContext.description%"
+        },
+        "seamless-agent.historyTimeDisplay": {
+          "type": "string",
+          "enum": [
+            "relative",
+            "absolute",
+            "hybrid"
+          ],
+          "default": "hybrid",
+          "title": "%config.historyTimeDisplay.title%",
+          "markdownDescription": "%config.historyTimeDisplay.description%"
         }
       }
     },

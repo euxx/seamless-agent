@@ -62,6 +62,8 @@
   "config.additionalIgnoredPaths.title": "Additional Ignored Paths",
   "config.storageContext.description": "Determines where the chat history is stored. 'Global' stores history across all workspaces, while 'Workspace' stores history specific to the current workspace.",
   "config.storageContext.title": "Storage Context",
+  "config.historyTimeDisplay.title": "History Time Display",
+  "config.historyTimeDisplay.description": "Choose how timestamps are shown in history items: relative, absolute (ISO 8601), or hybrid (relative under 7 days, ISO after).",
   "planReview.button.acknowledge": "Acknowledge",
   "planReview.button.continue": "Continue",
   "planReview.button.done": "Done",

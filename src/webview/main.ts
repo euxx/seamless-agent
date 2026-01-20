@@ -146,6 +146,9 @@ declare global {
             batchSelectedCount: string;
             confirmDeleteSelected: string;
         };
+        __CONFIG__: {
+            historyTimeDisplay: 'relative' | 'absolute' | 'hybrid';
+        };
     }
 }
 
@@ -1455,15 +1458,33 @@ import { truncate } from './utils';
         return div.innerHTML;
     }
 
+    function formatIsoDate(timestamp: number): string {
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toISOString().slice(0, 10);
+    }
+
     function formatTime(timestamp: number): string {
-        const diff = Date.now() - timestamp;
-        const minutes = Math.floor(diff / 60000);
         const strings = window.__STRINGS__;
+        const mode = window.__CONFIG__?.historyTimeDisplay || 'hybrid';
+        const now = Date.now();
+        const diff = now - timestamp;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (mode === 'absolute') {
+            return formatIsoDate(timestamp);
+        }
+
+        if (mode === 'hybrid' && days >= 7) {
+            return formatIsoDate(timestamp);
+        }
+
         if (minutes < 1) return strings?.justNow || 'just now';
         if (minutes < 60) return (strings?.minutesAgo || '{0}m ago').replace('{0}', String(minutes));
-        const hours = Math.floor(minutes / 60);
         if (hours < 24) return (strings?.hoursAgo || '{0}h ago').replace('{0}', String(hours));
-        return (strings?.daysAgo || '{0}d ago').replace('{0}', String(Math.floor(hours / 24)));
+        return (strings?.daysAgo || '{0}d ago').replace('{0}', String(days));
     }
 
     /**

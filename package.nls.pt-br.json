@@ -55,6 +55,8 @@
   "config.additionalIgnoredPaths.title": "Caminhos Adicionais a Ignorar",
   "config.storageContext.description": "Determina onde o histórico de chat é armazenado. 'Global' armazena o histórico em todos os workspaces, enquanto 'Workspace' armazena o histórico específico para o workspace atual.",
   "config.storageContext.title": "Contexto de Armazenamento",
+  "config.historyTimeDisplay.title": "Exibição de Tempo no Histórico",
+  "config.historyTimeDisplay.description": "Escolha como os horários aparecem no histórico: relativo, absoluto (ISO 8601) ou híbrido (relativo até 7 dias, ISO após).",
   "planReview.button.acknowledge": "Confirmar",
   "planReview.button.continue": "Continuar",
   "planReview.button.done": "Concluído",

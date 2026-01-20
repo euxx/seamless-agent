@@ -1236,6 +1236,12 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         const templatePath = path.join(this._extensionUri.fsPath, 'media', 'webview.html');
         let template = fs.readFileSync(templatePath, 'utf8');
 
+        const config = vscode.workspace.getConfiguration('seamless-agent');
+        const rawHistoryTimeDisplay = config.get<string>('historyTimeDisplay', 'hybrid');
+        const historyTimeDisplay = ['relative', 'absolute', 'hybrid'].includes(rawHistoryTimeDisplay)
+            ? rawHistoryTimeDisplay
+            : 'hybrid';
+
         // Replace placeholders
         const replacements: Record<string,
             string> = {
@@ -1301,6 +1307,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{batchDeselectAll}}': strings.batchDeselectAll,
             '{{batchDeleteSelected}}': strings.batchDeleteSelected,
             '{{batchSelectedCount}}': strings.batchSelectedCount,
+            '{{historyTimeDisplay}}': historyTimeDisplay,
         };
 
         for (const [placeholder, value] of Object.entries(replacements)) {
