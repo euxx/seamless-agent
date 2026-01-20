@@ -225,6 +225,7 @@ export type PlanReviewPanelToWebviewMessage =
     | { type: 'updateComments'; comments: RequiredPlanRevisions[] };
 
 export type PlanReviewPanelFromWebviewMessage =
+    | { type: 'ready' }
     | { type: 'approve'; comments: RequiredPlanRevisions[] }
     | { type: 'reject'; comments: RequiredPlanRevisions[] }
     | { type: 'acknowledge'; comments: RequiredPlanRevisions[] }

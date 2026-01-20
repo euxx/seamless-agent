@@ -35,6 +35,8 @@ export class PlanReviewPanel {
     private _planTitle: string;
     private _closedByAgent: boolean = false;
     private _panelId: string;
+    private _webviewReady: boolean = false;
+    private _pendingShowPlan: boolean = true;
 
     private constructor(
         panel: vscode.WebviewPanel,
@@ -66,17 +68,6 @@ export class PlanReviewPanel {
             this._disposables
         );
 
-        // Send initial content after a short delay to ensure webview is ready
-        setTimeout(() => {
-            this._panel.webview.postMessage({
-                type: 'showPlan',
-                content: options.plan,
-                title: this._planTitle,
-                mode: this._mode,
-                readOnly: this._readOnly,
-                comments: this._comments
-            } as ToWebviewMessage);
-        }, 100);
     }
 
     /**
@@ -271,6 +262,13 @@ export class PlanReviewPanel {
 
     private _handleMessage(message: FromWebviewMessage): void {
         switch (message.type) {
+            case 'ready':
+                this._webviewReady = true;
+                // Send pending content now that webview is ready
+                if (this._pendingShowPlan) {
+                    this._sendShowPlan();
+                }
+                break;
             case 'approve':
                 this._resolve({ approved: true, requiredRevisions: message.comments, action: 'approved' });
                 break;
@@ -308,6 +306,21 @@ export class PlanReviewPanel {
                 this._exportPlan();
                 break;
         }
+    }
+
+    /**
+     * Send the showPlan message to the webview
+     */
+    private _sendShowPlan(): void {
+        this._pendingShowPlan = false;
+        this._panel.webview.postMessage({
+            type: 'showPlan',
+            content: this._planContent,
+            title: this._planTitle,
+            mode: this._mode,
+            readOnly: this._readOnly,
+            comments: this._comments
+        } as ToWebviewMessage);
     }
 
     private async _exportPlan(): Promise<void> {

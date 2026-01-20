@@ -497,6 +497,9 @@ declare global {
                 break;
         }
     });
+
+    // Notify extension that webview is ready to receive messages
+    vscode.postMessage({ type: 'ready' });
 })();
 
 // Type declaration for VS Code API
