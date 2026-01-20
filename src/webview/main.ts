@@ -215,6 +215,7 @@ import { truncate } from './utils';
     const batchSelectAllBtn = document.getElementById('batch-select-all-btn');
     const batchDeleteBtn = document.getElementById('batch-delete-btn');
     const batchCancelBtn = document.getElementById('batch-cancel-btn');
+    const historyClearBtn = document.getElementById('history-clear-btn');
 
     // Batch selection state
     let batchSelectMode = false;
@@ -286,14 +287,6 @@ import { truncate } from './utils';
             btn.addEventListener('click', () => {
                 const tab = (btn.getAttribute('data-tab') || 'pending') as HomeTab;
                 switchTab(tab);
-            });
-        });
-
-        const clearBtn = document.querySelector('.home-toolbar-btn[data-action="clearHistory"]') as HTMLElement | null;
-
-        clearBtn?.addEventListener('click', () => {
-            vscode.postMessage({
-                type: 'clearHistory'
             });
         });
     }
@@ -460,6 +453,14 @@ import { truncate } from './utils';
             btn.addEventListener('click', () => {
                 const filter = btn.getAttribute('data-filter') || 'all';
                 applyHistoryFilter(filter);
+            });
+        });
+    }
+
+    function initHistoryActions(): void {
+        historyClearBtn?.addEventListener('click', () => {
+            vscode.postMessage({
+                type: 'clearHistory'
             });
         });
     }
@@ -2230,6 +2231,9 @@ import { truncate } from './utils';
 
     // Initialize history filters
     initHistoryFilters();
+
+    // Initialize history actions
+    initHistoryActions();
 
     // Initialize batch selection handlers
     initBatchSelection();
