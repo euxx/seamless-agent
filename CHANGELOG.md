@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.21](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.20...seamless-agent-v0.1.21) (2026-02-03)
+
+
+### Features
+
+* add configuration for 'askUser' response suffix ([c2b5e7e](https://github.com/jraylan/seamless-agent/commit/c2b5e7e8d82e830cf285b7a4de30b2e482c133aa))
+
+
+### Bug Fixes
+
+* fix typo in config text translation ([5444127](https://github.com/jraylan/seamless-agent/commit/5444127f8ff31a2bb0cb6d328ef01e3563c6fb8b))
+
 ## [0.1.20](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.19...seamless-agent-v0.1.20) (2026-01-20)
 
 
