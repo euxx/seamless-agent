@@ -123,6 +123,12 @@
           "default": "hybrid",
           "title": "%config.historyTimeDisplay.title%",
           "markdownDescription": "%config.historyTimeDisplay.description%"
+        },
+        "seamless-agent.askUserAppendText": {
+          "type": "string",
+          "default": "",
+          "title": "%config.askUserAppendText.title%",
+          "markdownDescription": "%config.askUserAppendText.description%"
         }
       }
     },
