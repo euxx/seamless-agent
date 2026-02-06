@@ -1737,11 +1737,15 @@ import { truncate } from './utils';
     * Handle submit button click
     */
     function handleSubmit(): void {
-        let response = responseInput?.value.trim() || '';
+        const typedResponse = responseInput?.value.trim() || '';
+        const selectedResponse = buildSelectedOptionsResponse();
 
-        // If no typed response, use selected options
-        if (!response) {
-            response = buildSelectedOptionsResponse();
+        // Combine selected options and typed response
+        let response = '';
+        if (selectedResponse && typedResponse) {
+            response = `${selectedResponse}\n\n${typedResponse}`;
+        } else {
+            response = selectedResponse || typedResponse;
         }
 
         if (currentRequestId) {
