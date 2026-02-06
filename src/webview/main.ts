@@ -968,15 +968,23 @@ import { truncate } from './utils';
             ];
 
             if (opt.description) {
-                btnChildren.push(
-                    el('span', { className: 'option-btn-description', text: opt.description })
-                );
+                const descEl = el('span', { className: 'option-btn-description', text: opt.description });
+                btnChildren.push(descEl);
+
+                // Always add tooltip for descriptions - will show on hover
+                const tooltip = el('span', {
+                    className: 'option-btn-tooltip',
+                    text: opt.description
+                });
+                btnChildren.push(tooltip);
             }
 
             const isSelected = selected.has(opt.label);
+            // Set button title to show full description on hover - single line break, no empty line
+            const btnTitle = opt.description ? `${opt.label}\n${opt.description}` : opt.label;
             const btn = el('button', {
                 className: 'option-btn' + (isSelected ? ' selected' : ''),
-                attrs: { type: 'button', title: opt.label, 'aria-pressed': String(isSelected) }
+                attrs: { type: 'button', title: btnTitle, 'aria-pressed': String(isSelected) }
             }, ...btnChildren);
 
             btn.addEventListener('click', () => {
