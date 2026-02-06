@@ -157,6 +157,9 @@ export const strings = {
     get batchSelectedCount() { return localize('batch.selectedCount'); },
     get confirmDeleteSelected() { return localize('confirm.deleteSelected'); },
 
+    // Options
+    get orTypeYourOwn() { return localize('console.orTypeYourOwn'); },
+
     // Errors
     get noSuchInteraction() { return localize('error.noSuchInteraction'); },
 };

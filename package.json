@@ -161,6 +161,47 @@
             "agentName": {
               "type": "string",
               "description": "Your agent name: 'Main Orchestrator' for main agent, 'Generic Sub-Agent' for unnamed sub-agents, or your name from .github/agents/*.md."
+            },
+            "options": {
+              "type": "array",
+              "description": "Optional predefined answer options. Can be a flat array of strings/objects for simple choices, or an array of option groups for multi-category selection.",
+              "items": {
+                "oneOf": [
+                  { "type": "string" },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "label": { "type": "string", "description": "The display label for the option button" },
+                      "description": { "type": "string", "description": "Optional description shown below the label" }
+                    },
+                    "required": ["label"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string", "description": "Group title displayed above the options" },
+                      "options": {
+                        "type": "array",
+                        "items": {
+                          "oneOf": [
+                            { "type": "string" },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "label": { "type": "string" },
+                                "description": { "type": "string" }
+                              },
+                              "required": ["label"]
+                            }
+                          ]
+                        }
+                      },
+                      "multiSelect": { "type": "boolean", "description": "Allow multiple selections. Default: false" }
+                    },
+                    "required": ["title", "options"]
+                  }
+                ]
+              }
             }
           },
           "required": [

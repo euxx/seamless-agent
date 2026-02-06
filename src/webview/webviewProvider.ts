@@ -19,6 +19,7 @@ import {
     FromWebviewMessage,
     FileSearchResult,
     UserResponseResult,
+    AskUserOptions,
 } from "./types";
 import { truncate } from './utils';
 
@@ -113,7 +114,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
      * Wait for a user response to a question.
      * Supports multiple concurrent requests.
      */
-    public async waitForUserResponse(question: string, title?: string, agentName?: string, requestId?: string): Promise<UserResponseResult> {
+    public async waitForUserResponse(question: string, title?: string, agentName?: string, requestId?: string, options?: AskUserOptions): Promise<UserResponseResult> {
 
         // If the view isn't available, try to open it
         if (!this._view) {
@@ -152,6 +153,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 createdAt: Date.now(),
                 attachments: [],
                 agentName,
+                options,
             };
 
             this._pendingRequests.set(req, { item, resolve });
@@ -245,7 +247,8 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             type: 'showQuestion',
             question: item.question,
             title: item.title,
-            requestId: item.id
+            requestId: item.id,
+            options: item.options
         };
         this._view?.webview.postMessage(message);
     }
@@ -1308,6 +1311,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{batchDeleteSelected}}': strings.batchDeleteSelected,
             '{{batchSelectedCount}}': strings.batchSelectedCount,
             '{{historyTimeDisplay}}': historyTimeDisplay,
+            '{{orTypeYourOwn}}': strings.orTypeYourOwn,
         };
 
         for (const [placeholder, value] of Object.entries(replacements)) {

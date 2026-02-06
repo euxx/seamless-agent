@@ -111,5 +111,6 @@
   "batch.deselectAll": "Desmarcar Tudo",
   "batch.deleteSelected": "Excluir Selecionados",
   "batch.selectedCount": "{0} selecionados",
-  "confirm.deleteSelected": "Tem certeza que deseja excluir {0} itens selecionados?"
+  "confirm.deleteSelected": "Tem certeza que deseja excluir {0} itens selecionados?",
+  "console.orTypeYourOwn": "Ou digite sua própria resposta abaixo"
 }

@@ -145,6 +145,8 @@ declare global {
             batchDeleteSelected: string;
             batchSelectedCount: string;
             confirmDeleteSelected: string;
+            // Options
+            orTypeYourOwn: string;
         };
         __CONFIG__: {
             historyTimeDisplay: 'relative' | 'absolute' | 'hybrid';
@@ -176,6 +178,15 @@ import { truncate } from './utils';
     let currentInteractionId: string | null = null;
     const draftResponses = new Map<string, string>();
 
+    // Options selection state
+    // Track selected options per group: groupTitle → Set of selected labels
+    const selectedOptionsMap = new Map<string, Set<string>>();
+    // Track multiSelect mode per group: groupTitle → boolean
+    const groupMultiSelectMap = new Map<string, boolean>();
+    // Stepper state for multi-group wizard
+    let currentStepIndex = 0;
+    let normalizedGroups: NormalizedOptionGroup[] = [];
+
     // Autocomplete state
     let autocompleteVisible = false;
     let autocompleteResults: FileSearchResult[] = [];
@@ -203,6 +214,13 @@ import { truncate } from './utils';
     const submitBtn = document.getElementById('submit-btn');
     const cancelBtn = document.getElementById('cancel-btn');
     const srAnnounce = document.getElementById('sr-announce');
+    const optionsContainer = document.getElementById('options-container');
+    const optionsButtons = document.getElementById('options-buttons');
+    const optionsStepper = document.getElementById('options-stepper');
+    const stepPrevBtn = document.getElementById('step-prev-btn') as HTMLButtonElement | null;
+    const stepNextBtn = document.getElementById('step-next-btn') as HTMLButtonElement | null;
+    const stepIndicator = document.getElementById('step-indicator');
+    const optionsSummary = document.getElementById('options-summary');
 
     // Tab content elements
     const contentPending = document.getElementById('content-pending');
@@ -784,12 +802,16 @@ import { truncate } from './utils';
     /**
 * Show the question form and hide other views
 */
-    function showQuestion(question: string, title: string, requestId: string): void {
+    function showQuestion(question: string, title: string, requestId: string, options?: any[]): void {
         if (responseInput && currentRequestId && currentRequestId !== requestId) {
             draftResponses.set(currentRequestId, responseInput.value);
         }
 
         currentRequestId = requestId;
+
+        // Reset selection state
+        selectedOptionsMap.clear();
+        groupMultiSelectMap.clear();
 
         // Set header title
         if (headerTitle) {
@@ -806,6 +828,9 @@ import { truncate } from './utils';
             autoResizeTextarea();
         }
 
+        // Render option buttons if provided
+        renderOptions(options);
+
         // Hide ALL other views
         homeView?.classList.add('hidden');
         requestList?.classList.add('hidden');
@@ -820,6 +845,272 @@ import { truncate } from './utils';
 
         // Focus the textarea for immediate typing
         responseInput?.focus();
+    }
+
+    // ================================
+    // Options rendering helpers
+    // ================================
+
+    interface NormalizedOptionItem {
+        label: string;
+        description?: string;
+    }
+
+    interface NormalizedOptionGroup {
+        title: string;
+        options: NormalizedOptionItem[];
+        multiSelect: boolean;
+    }
+
+    /**
+     * Check if the options array contains option groups (objects with 'title' and 'options' fields)
+     */
+    function isOptionGroupArray(options: any[]): boolean {
+        return options.length > 0 && typeof options[0] === 'object' && options[0] !== null && 'title' in options[0] && 'options' in options[0];
+    }
+
+    /**
+     * Normalize raw options to a unified group structure
+     */
+    function parseOptionsToGroups(options: any[]): NormalizedOptionGroup[] {
+        if (isOptionGroupArray(options)) {
+            return options.map((g: any) => ({
+                title: String(g.title || ''),
+                options: (Array.isArray(g.options) ? g.options : []).map((o: any) =>
+                    typeof o === 'string' ? { label: o } : { label: String(o.label || ''), description: o.description ? String(o.description) : undefined }
+                ),
+                multiSelect: Boolean(g.multiSelect)
+            }));
+        } else {
+            return [{
+                title: '',
+                options: options.map((o: any) =>
+                    typeof o === 'string' ? { label: o } : { label: String(o.label || ''), description: o.description ? String(o.description) : undefined }
+                ),
+                multiSelect: false
+            }];
+        }
+    }
+
+    /**
+     * Render options in the options container.
+     * - Single group: show all options directly (no stepper)
+     * - Multiple groups: wizard-style stepper (one group at a time with navigation)
+     */
+    function renderOptions(options?: any[]): void {
+        if (!optionsContainer || !optionsButtons) return;
+
+        if (!options || options.length === 0) {
+            optionsContainer.classList.add('hidden');
+            clearChildren(optionsButtons);
+            optionsStepper?.classList.add('hidden');
+            optionsSummary?.classList.add('hidden');
+            normalizedGroups = [];
+            return;
+        }
+
+        selectedOptionsMap.clear();
+        groupMultiSelectMap.clear();
+        normalizedGroups = parseOptionsToGroups(options);
+        currentStepIndex = 0;
+
+        // Initialize selection tracking for all groups
+        for (const group of normalizedGroups) {
+            selectedOptionsMap.set(group.title, new Set<string>());
+            groupMultiSelectMap.set(group.title, group.multiSelect);
+        }
+
+        if (normalizedGroups.length === 1) {
+            // Single group: render directly, no stepper
+            optionsStepper?.classList.add('hidden');
+            optionsSummary?.classList.add('hidden');
+            renderGroupOptions(normalizedGroups[0]);
+        } else {
+            // Multiple groups: show stepper wizard
+            optionsStepper?.classList.remove('hidden');
+            renderCurrentStep();
+        }
+
+        optionsContainer.classList.remove('hidden');
+    }
+
+    /**
+     * Render a single group's option buttons
+     */
+    function renderGroupOptions(group: NormalizedOptionGroup): void {
+        if (!optionsButtons) return;
+        clearChildren(optionsButtons);
+
+        const selected = selectedOptionsMap.get(group.title) || new Set<string>();
+
+        for (const opt of group.options) {
+            const btnChildren: ElementChild[] = [
+                el('span', { className: 'option-btn-label', text: opt.label })
+            ];
+
+            if (opt.description) {
+                btnChildren.push(
+                    el('span', { className: 'option-btn-description', text: opt.description })
+                );
+            }
+
+            const isSelected = selected.has(opt.label);
+            const btn = el('button', {
+                className: 'option-btn' + (isSelected ? ' selected' : ''),
+                attrs: { type: 'button', title: opt.label }
+            }, ...btnChildren);
+
+            btn.addEventListener('click', () => {
+                toggleOptionSelection(group.title, opt.label, btn, optionsButtons!, group.multiSelect);
+            });
+
+            optionsButtons.appendChild(btn);
+        }
+    }
+
+    /**
+     * Render the current step in the stepper wizard
+     */
+    function renderCurrentStep(): void {
+        if (normalizedGroups.length <= 1) return;
+
+        const group = normalizedGroups[currentStepIndex];
+
+        // Update step indicator
+        if (stepIndicator) {
+            const stepText = group.title
+                ? `${currentStepIndex + 1}/${normalizedGroups.length}: ${group.title}`
+                : `${currentStepIndex + 1}/${normalizedGroups.length}`;
+            stepIndicator.textContent = stepText;
+        }
+
+        // Update navigation buttons
+        if (stepPrevBtn) {
+            stepPrevBtn.disabled = currentStepIndex === 0;
+        }
+        if (stepNextBtn) {
+            stepNextBtn.disabled = currentStepIndex === normalizedGroups.length - 1;
+        }
+
+        // Render current group's options
+        renderGroupOptions(group);
+
+        // Update selection summary (shows selections from OTHER steps)
+        renderSelectionSummary();
+    }
+
+    /**
+     * Show a summary of selections from all steps
+     */
+    function renderSelectionSummary(): void {
+        if (!optionsSummary) return;
+
+        const summaryItems: ElementChild[] = [];
+
+        for (let i = 0; i < normalizedGroups.length; i++) {
+            const group = normalizedGroups[i];
+            const selected = selectedOptionsMap.get(group.title) || new Set<string>();
+            if (selected.size === 0) continue;
+
+            const values = Array.from(selected).join(', ');
+            const stepIndex = i; // capture for closure
+            const itemEl = el('div', {
+                className: 'options-summary-item' + (i === currentStepIndex ? ' current' : ''),
+                attrs: { role: 'button', tabindex: '0', title: group.title ? `Go to: ${group.title}` : 'Go to selection' }
+            });
+
+            if (group.title) {
+                itemEl.appendChild(el('span', { className: 'options-summary-label', text: `${group.title}: ` }));
+            }
+            itemEl.appendChild(document.createTextNode(values));
+
+            // Click to navigate to that group's step
+            itemEl.addEventListener('click', () => {
+                currentStepIndex = stepIndex;
+                renderCurrentStep();
+            });
+
+            summaryItems.push(itemEl);
+        }
+
+        clearChildren(optionsSummary);
+
+        if (summaryItems.length > 0) {
+            appendChildren(optionsSummary, ...summaryItems);
+            optionsSummary.classList.remove('hidden');
+        } else {
+            optionsSummary.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Navigate to the previous step
+     */
+    function stepPrevious(): void {
+        if (currentStepIndex > 0) {
+            currentStepIndex--;
+            renderCurrentStep();
+        }
+    }
+
+    /**
+     * Navigate to the next step
+     */
+    function stepNext(): void {
+        if (currentStepIndex < normalizedGroups.length - 1) {
+            currentStepIndex++;
+            renderCurrentStep();
+        }
+    }
+
+    // Wire up stepper navigation buttons
+    stepPrevBtn?.addEventListener('click', stepPrevious);
+    stepNextBtn?.addEventListener('click', stepNext);
+
+    /**
+     * Toggle an option's selection state
+     */
+    function toggleOptionSelection(groupTitle: string, label: string, btn: HTMLElement, container: HTMLElement, multiSelect: boolean): void {
+        const selected = selectedOptionsMap.get(groupTitle) || new Set<string>();
+
+        if (selected.has(label)) {
+            // Deselect
+            selected.delete(label);
+            btn.classList.remove('selected');
+        } else {
+            if (!multiSelect) {
+                // Single select: deselect all others in this group
+                selected.clear();
+                container.querySelectorAll('.option-btn.selected').forEach(b => b.classList.remove('selected'));
+            }
+            selected.add(label);
+            btn.classList.add('selected');
+        }
+
+        selectedOptionsMap.set(groupTitle, selected);
+
+        // Update selection summary in real-time
+        if (normalizedGroups.length > 1) {
+            renderSelectionSummary();
+        }
+    }
+
+    /**
+     * Build a response string from selected options.
+     * Returns empty string if nothing is selected.
+     */
+    function buildSelectedOptionsResponse(): string {
+        const parts: string[] = [];
+        for (const [groupTitle, selected] of selectedOptionsMap.entries()) {
+            if (selected.size === 0) continue;
+            const values = Array.from(selected).join(', ');
+            if (groupTitle) {
+                parts.push(`${groupTitle}: ${values}`);
+            } else {
+                parts.push(values);
+            }
+        }
+        return parts.join('\n');
     }
 
     /**
@@ -1412,7 +1703,12 @@ import { truncate } from './utils';
     * Handle submit button click
     */
     function handleSubmit(): void {
-        const response = responseInput?.value.trim() || '';
+        let response = responseInput?.value.trim() || '';
+
+        // If no typed response, use selected options
+        if (!response) {
+            response = buildSelectedOptionsResponse();
+        }
 
         if (currentRequestId) {
             vscode.postMessage({
@@ -1423,6 +1719,10 @@ import { truncate } from './utils';
             });
             draftResponses.delete(currentRequestId);
         }
+
+        // Reset selection state
+        selectedOptionsMap.clear();
+        groupMultiSelectMap.clear();
 
         currentAttachments = [];
         // Don't show home - the extension will send showCurrentSession or showSessionDetail
@@ -2148,7 +2448,7 @@ import { truncate } from './utils';
         const message = event.data;
 
         switch (message.type) {
-            case 'showQuestion': showQuestion(message.question, message.title, message.requestId);
+            case 'showQuestion': showQuestion(message.question, message.title, message.requestId, message.options);
                 break;
             case 'showList': showList(message.requests);
                 break;
