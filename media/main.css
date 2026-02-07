@@ -436,6 +436,26 @@ body {
     opacity: 0.75;
 }
 
+/* Read-only option buttons (history view) */
+.option-btn.readonly {
+    cursor: default;
+    opacity: 0.8;
+}
+
+.option-btn.readonly:hover {
+    background-color: var(--vscode-button-secondaryBackground);
+    border-color: transparent;
+}
+
+.option-btn.readonly.selected {
+    opacity: 1;
+}
+
+.option-btn.readonly.selected:hover {
+    background-color: color-mix(in srgb, var(--vscode-button-background, #0078d4) 20%, transparent);
+    border-color: var(--vscode-button-background, #0078d4);
+}
+
 /* Tooltip for full description on hover */
 .option-btn-tooltip {
     position: absolute;
@@ -1655,8 +1675,8 @@ button:disabled {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-height: 100%;
-    overflow: hidden;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .detail-section {
@@ -1677,6 +1697,9 @@ button:disabled {
     background-color: transparent;
     border: none;
     padding: 0;
+    overflow: visible;
+    max-height: none;
+    min-height: auto;
 }
 
 .detail-label {

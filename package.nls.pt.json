@@ -95,6 +95,7 @@
   "detail.question": "Pergunta",
   "detail.response": "Resposta",
   "detail.noResponse": "Sem resposta",
+  "detail.options": "Opções",
   "history.filter.all": "Tudo",
   "history.filter.askUser": "Perguntar ao utilizador",
   "history.filter.planReview": "Revisão de Plano",

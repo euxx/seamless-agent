@@ -331,7 +331,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 responded: true,
                 response: message.response,
                 attachments: message.attachments || []
-            });
+            }, message.selectedOptions);
                 break;
 
             case 'cancel': this._resolveRequest(message.requestId, {
@@ -944,7 +944,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
     /**
      * Resolve a specific request and clean up
      */
-    private _resolveRequest(requestId: string, result: UserResponseResult): void {
+    private _resolveRequest(requestId: string, result: UserResponseResult, selectedOptions?: Record<string, string[]>): void {
         const pending = this._pendingRequests.get(requestId);
 
         if (pending) {
@@ -965,7 +965,9 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                     title: pending.item.title,
                     agentName: pending.item.agentName,
                     response: result.responded ? result.response : strings.cancelled,
-                    attachments: (result.attachments || []).map(a => a.uri)
+                    attachments: (result.attachments || []).map(a => a.uri),
+                    options: pending.item.options,
+                    selectedOptionLabels: selectedOptions,
                 });
             } catch (e) {
                 console.error('[Seamless Agent] Failed to save ask_user interaction to ChatHistoryStorage:', e);
@@ -1299,6 +1301,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{question}}': strings.question,
             '{{response}}': strings.response,
             '{{noResponse}}': strings.noResponse,
+            '{{options}}': strings.options,
             // History filter tooltips
             '{{historyFilterAll}}': strings.historyFilterAll,
             '{{historyFilterAskUser}}': strings.historyFilterAskUser,

@@ -147,6 +147,7 @@ declare global {
             confirmDeleteSelected: string;
             // Options
             orTypeYourOwn: string;
+            options: string;
         };
         __CONFIG__: {
             historyTimeDisplay: 'relative' | 'absolute' | 'hybrid';
@@ -178,14 +179,8 @@ import { truncate } from './utils';
     let currentInteractionId: string | null = null;
     const draftResponses = new Map<string, string>();
 
-    // Options selection state
-    // Track selected options per group: groupTitle → Set of selected labels
-    const selectedOptionsMap = new Map<string, Set<string>>();
-    // Track multiSelect mode per group: groupTitle → boolean
-    const groupMultiSelectMap = new Map<string, boolean>();
-    // Stepper state for multi-group wizard
-    let currentStepIndex = 0;
-    let normalizedGroups: NormalizedOptionGroup[] = [];
+    // Active options stepper instance (for pending request form)
+    let activeOptionsStepper: OptionsStepper | null = null;
 
     // Autocomplete state
     let autocompleteVisible = false;
@@ -215,12 +210,6 @@ import { truncate } from './utils';
     const cancelBtn = document.getElementById('cancel-btn');
     const srAnnounce = document.getElementById('sr-announce');
     const optionsContainer = document.getElementById('options-container');
-    const optionsButtons = document.getElementById('options-buttons');
-    const optionsStepper = document.getElementById('options-stepper');
-    const stepPrevBtn = document.getElementById('step-prev-btn') as HTMLButtonElement | null;
-    const stepNextBtn = document.getElementById('step-next-btn') as HTMLButtonElement | null;
-    const stepIndicator = document.getElementById('step-indicator');
-    const optionsSummary = document.getElementById('options-summary');
 
     // Tab content elements
     const contentPending = document.getElementById('content-pending');
@@ -809,10 +798,11 @@ import { truncate } from './utils';
 
         currentRequestId = requestId;
 
-        // Reset selection state
-        selectedOptionsMap.clear();
-        groupMultiSelectMap.clear();
-        currentStepIndex = 0;
+        // Reset previous stepper instance
+        if (activeOptionsStepper) {
+            activeOptionsStepper.destroy();
+            activeOptionsStepper = null;
+        }
 
         // Set header title
         if (headerTitle) {
@@ -913,54 +903,55 @@ import { truncate } from './utils';
 
     /**
      * Render options in the options container.
-     * - Single group: show all options directly (no stepper)
-     * - Multiple groups: wizard-style stepper (one group at a time with navigation)
+     * Creates an OptionsStepper instance and mounts it into the fieldset.
      */
     function renderOptions(options?: any[]): void {
-        if (!optionsContainer || !optionsButtons) return;
+        if (!optionsContainer) return;
+
+        // Destroy previous stepper if any
+        if (activeOptionsStepper) {
+            activeOptionsStepper.destroy();
+            activeOptionsStepper = null;
+        }
 
         if (!options || options.length === 0) {
             optionsContainer.classList.add('hidden');
-            clearChildren(optionsButtons);
-            optionsStepper?.classList.add('hidden');
-            optionsSummary?.classList.add('hidden');
-            normalizedGroups = [];
             return;
         }
 
-        selectedOptionsMap.clear();
-        groupMultiSelectMap.clear();
-        normalizedGroups = parseOptionsToGroups(options);
-        currentStepIndex = 0;
+        // Create interactive stepper
+        activeOptionsStepper = createOptionsStepper({
+            options,
+            readOnly: false,
+        });
 
-        // Initialize selection tracking for all groups
-        for (const group of normalizedGroups) {
-            selectedOptionsMap.set(group.title, new Set<string>());
-            groupMultiSelectMap.set(group.title, group.multiSelect);
-        }
-
-        if (normalizedGroups.length === 1) {
-            // Single group: render directly, no stepper
-            optionsStepper?.classList.add('hidden');
-            optionsSummary?.classList.add('hidden');
-            renderGroupOptions(normalizedGroups[0]);
+        // Mount stepper before the separator
+        const separator = optionsContainer.querySelector('.options-separator');
+        if (separator) {
+            optionsContainer.insertBefore(activeOptionsStepper.element, separator);
         } else {
-            // Multiple groups: show stepper wizard
-            optionsStepper?.classList.remove('hidden');
-            renderCurrentStep();
+            optionsContainer.appendChild(activeOptionsStepper.element);
         }
 
         optionsContainer.classList.remove('hidden');
     }
 
     /**
-     * Render a single group's option buttons
+     * Build option button elements for a group.
+     * Shared between pending (interactive) and history (read-only) views.
+     * @param group The option group to render
+     * @param selected Set of currently selected labels
+     * @param readOnly If true, buttons are non-interactive (for history view)
+     * @param onToggle Optional callback for interactive mode
+     * @returns Array of button elements
      */
-    function renderGroupOptions(group: NormalizedOptionGroup): void {
-        if (!optionsButtons) return;
-        clearChildren(optionsButtons);
-
-        const selected = selectedOptionsMap.get(group.title) || new Set<string>();
+    function buildOptionButtons(
+        group: NormalizedOptionGroup,
+        selected: Set<string>,
+        readOnly: boolean,
+        onToggle?: (label: string, btn: HTMLElement) => void,
+    ): HTMLElement[] {
+        const buttons: HTMLElement[] = [];
 
         for (const opt of group.options) {
             const btnChildren: ElementChild[] = [
@@ -982,177 +973,252 @@ import { truncate } from './utils';
             const isSelected = selected.has(opt.label);
             // Set button title to show full description on hover - single line break, no empty line
             const btnTitle = opt.description ? `${opt.label}\n${opt.description}` : opt.label;
+            const classNames = 'option-btn'
+                + (isSelected ? ' selected' : '')
+                + (readOnly ? ' readonly' : '');
             const btn = el('button', {
-                className: 'option-btn' + (isSelected ? ' selected' : ''),
-                attrs: { type: 'button', title: btnTitle, 'aria-pressed': String(isSelected) }
+                className: classNames,
+                attrs: {
+                    type: 'button',
+                    title: btnTitle,
+                    'aria-pressed': String(isSelected),
+                    ...(readOnly ? { disabled: '' } : {})
+                }
             }, ...btnChildren);
 
-            btn.addEventListener('click', () => {
-                toggleOptionSelection(group.title, opt.label, btn, optionsButtons!, group.multiSelect);
-            });
-
-            optionsButtons.appendChild(btn);
-        }
-    }
-
-    /**
-     * Render the current step in the stepper wizard
-     */
-    function renderCurrentStep(): void {
-        if (normalizedGroups.length <= 1) return;
-
-        const group = normalizedGroups[currentStepIndex];
-
-        // Update step indicator
-        if (stepIndicator) {
-            const stepText = group.title
-                ? `${currentStepIndex + 1}/${normalizedGroups.length}: ${group.title}`
-                : `${currentStepIndex + 1}/${normalizedGroups.length}`;
-            stepIndicator.textContent = stepText;
-        }
-
-        // Update navigation buttons
-        if (stepPrevBtn) {
-            stepPrevBtn.disabled = currentStepIndex === 0;
-        }
-        if (stepNextBtn) {
-            stepNextBtn.disabled = currentStepIndex === normalizedGroups.length - 1;
-        }
-
-        // Render current group's options
-        renderGroupOptions(group);
-
-        // Update selection summary (shows selections from OTHER steps)
-        renderSelectionSummary();
-    }
-
-    /**
-     * Show a summary of selections from all steps
-     */
-    function renderSelectionSummary(): void {
-        if (!optionsSummary) return;
-
-        const summaryItems: ElementChild[] = [];
-
-        for (let i = 0; i < normalizedGroups.length; i++) {
-            const group = normalizedGroups[i];
-            const selected = selectedOptionsMap.get(group.title) || new Set<string>();
-            if (selected.size === 0) continue;
-
-            const values = Array.from(selected).join(', ');
-            const stepIndex = i; // capture for closure
-            const itemEl = el('div', {
-                className: 'options-summary-item' + (i === currentStepIndex ? ' current' : ''),
-                attrs: { role: 'button', tabindex: '0', title: group.title ? `Go to: ${group.title}` : 'Go to selection' }
-            });
-
-            if (group.title) {
-                itemEl.appendChild(el('span', { className: 'options-summary-label', text: `${group.title}: ` }));
-            }
-            itemEl.appendChild(document.createTextNode(values));
-
-            // Click to navigate to that group's step
-            itemEl.addEventListener('click', () => {
-                currentStepIndex = stepIndex;
-                renderCurrentStep();
-            });
-
-            // Keyboard support: activate on Enter or Space when focused
-            itemEl.addEventListener('keydown', (event: KeyboardEvent) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    itemEl.click();
-                }
-            });
-
-            summaryItems.push(itemEl);
-        }
-
-        clearChildren(optionsSummary);
-
-        if (summaryItems.length > 0) {
-            appendChildren(optionsSummary, ...summaryItems);
-            optionsSummary.classList.remove('hidden');
-        } else {
-            optionsSummary.classList.add('hidden');
-        }
-    }
-
-    /**
-     * Navigate to the previous step
-     */
-    function stepPrevious(): void {
-        if (currentStepIndex > 0) {
-            currentStepIndex--;
-            renderCurrentStep();
-        }
-    }
-
-    /**
-     * Navigate to the next step
-     */
-    function stepNext(): void {
-        if (currentStepIndex < normalizedGroups.length - 1) {
-            currentStepIndex++;
-            renderCurrentStep();
-        }
-    }
-
-    // Wire up stepper navigation buttons
-    stepPrevBtn?.addEventListener('click', stepPrevious);
-    stepNextBtn?.addEventListener('click', stepNext);
-
-    /**
-     * Toggle an option's selection state
-     */
-    function toggleOptionSelection(groupTitle: string, label: string, btn: HTMLElement, container: HTMLElement, multiSelect: boolean): void {
-        const selected = selectedOptionsMap.get(groupTitle) || new Set<string>();
-
-        if (selected.has(label)) {
-            // Deselect
-            selected.delete(label);
-            btn.classList.remove('selected');
-            btn.setAttribute('aria-pressed', 'false');
-        } else {
-            if (!multiSelect) {
-                // Single select: deselect all others in this group
-                selected.clear();
-                container.querySelectorAll('.option-btn.selected').forEach(b => {
-                    b.classList.remove('selected');
-                    b.setAttribute('aria-pressed', 'false');
+            if (!readOnly && onToggle) {
+                btn.addEventListener('click', () => {
+                    onToggle(opt.label, btn);
                 });
             }
-            selected.add(label);
-            btn.classList.add('selected');
-            btn.setAttribute('aria-pressed', 'true');
+
+            buttons.push(btn);
         }
 
-        selectedOptionsMap.set(groupTitle, selected);
-
-        // Update selection summary in real-time
-        if (normalizedGroups.length > 1) {
-            renderSelectionSummary();
-        }
+        return buttons;
     }
 
     /**
-     * Build a response string from selected options.
-     * Iterates over normalizedGroups to maintain explicit ordering.
-     * Returns empty string if nothing is selected.
+     * Options stepper instance interface.
+     * Returned by createOptionsStepper() for both pending (interactive) and history (read-only) views.
      */
-    function buildSelectedOptionsResponse(): string {
-        const parts: string[] = [];
-        for (const group of normalizedGroups) {
-            const selected = selectedOptionsMap.get(group.title);
-            if (!selected || selected.size === 0) continue;
-            const values = Array.from(selected).join(', ');
-            if (group.title) {
-                parts.push(`${group.title}: ${values}`);
+    interface OptionsStepper {
+        /** Root DOM element to mount */
+        element: HTMLElement;
+        /** Get current selections as Record<groupTitle, selectedLabels[]> */
+        getSelections(): Record<string, string[]>;
+        /** Build a response string from selected options */
+        getSelectedResponse(): string;
+        /** Clean up the stepper DOM and event listeners */
+        destroy(): void;
+    }
+
+    /**
+     * Create an options stepper (wizard-style or single-group).
+     * Encapsulates its own state via closure — multiple instances can coexist.
+     * Used by both the pending request form (interactive) and the history detail view (read-only).
+     *
+     * @param config.options Raw options data (AskUserOptions)
+     * @param config.readOnly If true, buttons are non-interactive
+     * @param config.selectedLabels Pre-populated selections (for history view)
+     * @param config.onSelectionChange Callback when selection changes (for pending view)
+     */
+    function createOptionsStepper(config: {
+        options: any[];
+        readOnly: boolean;
+        selectedLabels?: Record<string, string[]>;
+        onSelectionChange?: () => void;
+    }): OptionsStepper {
+        const groups = parseOptionsToGroups(config.options);
+        let currentIndex = 0;
+        const selectionsMap = new Map<string, Set<string>>();
+        const multiSelectMap = new Map<string, boolean>();
+
+        // Initialize selections from saved labels or empty
+        for (const group of groups) {
+            if (config.selectedLabels?.[group.title]) {
+                selectionsMap.set(group.title, new Set(config.selectedLabels[group.title]));
             } else {
-                parts.push(values);
+                selectionsMap.set(group.title, new Set());
+            }
+            multiSelectMap.set(group.title, group.multiSelect);
+        }
+
+        // Root container
+        const root = el('div', { className: 'options-stepper-root' });
+
+        // Stepper navigation (only for multi-group)
+        let stepperNav: HTMLElement | null = null;
+        let stepIndicatorEl: HTMLElement | null = null;
+        let prevBtnEl: HTMLButtonElement | null = null;
+        let nextBtnEl: HTMLButtonElement | null = null;
+        let summaryEl: HTMLElement | null = null;
+
+        if (groups.length > 1) {
+            prevBtnEl = el('button', {
+                className: 'step-nav-btn',
+                attrs: { type: 'button', title: 'Previous', 'aria-label': 'Previous step' }
+            },
+                el('span', { className: 'codicon codicon-chevron-left' })
+            ) as HTMLButtonElement;
+
+            stepIndicatorEl = el('span', { className: 'step-indicator' });
+
+            nextBtnEl = el('button', {
+                className: 'step-nav-btn',
+                attrs: { type: 'button', title: 'Next', 'aria-label': 'Next step' }
+            },
+                el('span', { className: 'codicon codicon-chevron-right' })
+            ) as HTMLButtonElement;
+
+            stepperNav = el('div', { className: 'options-stepper' }, prevBtnEl, stepIndicatorEl, nextBtnEl);
+            root.appendChild(stepperNav);
+
+            summaryEl = el('div', { className: 'options-summary hidden' });
+            root.appendChild(summaryEl);
+
+            prevBtnEl.addEventListener('click', () => {
+                if (currentIndex > 0) { currentIndex--; renderStep(); }
+            });
+            nextBtnEl.addEventListener('click', () => {
+                if (currentIndex < groups.length - 1) { currentIndex++; renderStep(); }
+            });
+        }
+
+        const buttonsContainer = el('div', { className: 'options-buttons', attrs: { 'aria-label': 'Options' } });
+        root.appendChild(buttonsContainer);
+
+        /** Render the current step (buttons + nav + summary) */
+        function renderStep(): void {
+            const group = groups[currentIndex];
+
+            // Update step indicator
+            if (stepIndicatorEl) {
+                const stepText = group.title
+                    ? `${currentIndex + 1}/${groups.length}: ${group.title}`
+                    : `${currentIndex + 1}/${groups.length}`;
+                stepIndicatorEl.textContent = stepText;
+            }
+
+            // Update navigation buttons
+            if (prevBtnEl) { prevBtnEl.disabled = currentIndex === 0; }
+            if (nextBtnEl) { nextBtnEl.disabled = currentIndex === groups.length - 1; }
+
+            // Render current group's buttons
+            clearChildren(buttonsContainer);
+            const selected = selectionsMap.get(group.title) || new Set<string>();
+            const buttons = buildOptionButtons(
+                group, selected, config.readOnly,
+                config.readOnly ? undefined : (label, btn) => {
+                    handleToggle(group.title, label, btn, group.multiSelect);
+                }
+            );
+            for (const btn of buttons) { buttonsContainer.appendChild(btn); }
+
+            // Update summary
+            if (groups.length > 1) { renderSummary(); }
+        }
+
+        /** Toggle an option's selection state (interactive mode only) */
+        function handleToggle(groupTitle: string, label: string, btn: HTMLElement, multiSelect: boolean): void {
+            const selected = selectionsMap.get(groupTitle) || new Set<string>();
+
+            if (selected.has(label)) {
+                selected.delete(label);
+                btn.classList.remove('selected');
+                btn.setAttribute('aria-pressed', 'false');
+            } else {
+                if (!multiSelect) {
+                    selected.clear();
+                    buttonsContainer.querySelectorAll('.option-btn.selected').forEach(b => {
+                        b.classList.remove('selected');
+                        b.setAttribute('aria-pressed', 'false');
+                    });
+                }
+                selected.add(label);
+                btn.classList.add('selected');
+                btn.setAttribute('aria-pressed', 'true');
+            }
+
+            selectionsMap.set(groupTitle, selected);
+            if (groups.length > 1) { renderSummary(); }
+            config.onSelectionChange?.();
+        }
+
+        /** Render the selection summary showing all groups' selected values */
+        function renderSummary(): void {
+            if (!summaryEl) return;
+            clearChildren(summaryEl);
+
+            const items: HTMLElement[] = [];
+            for (let i = 0; i < groups.length; i++) {
+                const group = groups[i];
+                const selected = selectionsMap.get(group.title) || new Set<string>();
+                if (selected.size === 0) continue;
+
+                const values = Array.from(selected).join(', ');
+                const stepIdx = i;
+                const itemEl = el('div', {
+                    className: 'options-summary-item' + (i === currentIndex ? ' current' : ''),
+                    attrs: { role: 'button', tabindex: '0', title: group.title ? `Go to: ${group.title}` : 'Go to selection' }
+                });
+
+                if (group.title) {
+                    itemEl.appendChild(el('span', { className: 'options-summary-label', text: `${group.title}: ` }));
+                }
+                itemEl.appendChild(document.createTextNode(values));
+
+                // Click to navigate to that step
+                itemEl.addEventListener('click', () => { currentIndex = stepIdx; renderStep(); });
+                itemEl.addEventListener('keydown', (event: KeyboardEvent) => {
+                    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); itemEl.click(); }
+                });
+
+                items.push(itemEl);
+            }
+
+            if (items.length > 0) {
+                appendChildren(summaryEl, ...items);
+                summaryEl.classList.remove('hidden');
+            } else {
+                summaryEl.classList.add('hidden');
             }
         }
-        return parts.join('\n');
+
+        // Initial render
+        renderStep();
+
+        return {
+            element: root,
+            getSelections(): Record<string, string[]> {
+                const result: Record<string, string[]> = {};
+                for (const group of groups) {
+                    const selected = selectionsMap.get(group.title);
+                    if (selected && selected.size > 0) {
+                        result[group.title] = Array.from(selected);
+                    }
+                }
+                return result;
+            },
+            getSelectedResponse(): string {
+                const parts: string[] = [];
+                for (const group of groups) {
+                    const selected = selectionsMap.get(group.title);
+                    if (!selected || selected.size === 0) continue;
+                    const values = Array.from(selected).join(', ');
+                    if (group.title) {
+                        parts.push(`${group.title}: ${values}`);
+                    } else {
+                        parts.push(values);
+                    }
+                }
+                return parts.join('\n');
+            },
+            destroy(): void {
+                clearChildren(root);
+                root.remove();
+            }
+        };
     }
 
     /**
@@ -1511,6 +1577,36 @@ import { truncate } from './utils';
         updateHomeToolbarBadgesFromDom();
     }
 
+    /**
+     * Render read-only options for history detail view.
+     * Uses createOptionsStepper() with readOnly=true to show the same stepper UI
+     * as the pending view, but with non-interactive buttons.
+     * Returns an empty text node if no options exist.
+     */
+    function renderReadOnlyOptionsDetail(interaction: StoredInteraction): HTMLElement | Text {
+        if (!interaction.options || !Array.isArray(interaction.options) || interaction.options.length === 0) {
+            return tn('');
+        }
+
+        const optionsLabel = window.__STRINGS__?.options || 'Options';
+
+        const container = el('div', { className: 'detail-section detail-section-plain' },
+            el('div', { className: 'detail-label' },
+                el('span', { className: 'codicon codicon-list-selection' }),
+                optionsLabel
+            )
+        );
+
+        const stepper = createOptionsStepper({
+            options: interaction.options,
+            readOnly: true,
+            selectedLabels: interaction.selectedOptionLabels,
+        });
+
+        container.appendChild(stepper.element);
+
+        return container;
+    }
 
     /**
      * Show interaction detail view (for ask_user)
@@ -1575,6 +1671,9 @@ import { truncate } from './utils';
                             ))
                     ))() : tn('');
 
+                // Build read-only options display if the interaction had options
+                const optionsHtml = renderReadOnlyOptionsDetail(interaction);
+
                 detailContent.replaceChildren(
                     el('div', { className: 'detail-section detail-section-plain' },
                         el('div', { className: 'detail-label' },
@@ -1583,6 +1682,7 @@ import { truncate } from './utils';
                         ),
                         el('div', { className: 'detail-content markdown-content', html: renderMarkdown(interaction.question || '') })
                     ),
+                    optionsHtml,
                     el('div', { className: 'detail-section detail-section-plain' },
                         el('div', { className: 'detail-label' },
                             el('span', { className: 'codicon codicon-reply' }),
@@ -1746,7 +1846,7 @@ import { truncate } from './utils';
     */
     function handleSubmit(): void {
         const typedResponse = responseInput?.value.trim() || '';
-        const selectedResponse = buildSelectedOptionsResponse();
+        const selectedResponse = activeOptionsStepper?.getSelectedResponse() || '';
 
         // Combine selected options and typed response
         let response = '';
@@ -1756,21 +1856,25 @@ import { truncate } from './utils';
             response = selectedResponse || typedResponse;
         }
 
+        // Build selectedOptions map for storage
+        const selectedOptions = activeOptionsStepper?.getSelections() || {};
+
         if (currentRequestId) {
             vscode.postMessage({
                 type: 'submit',
                 response: response,
                 requestId: currentRequestId,
-                attachments: currentAttachments
+                attachments: currentAttachments,
+                selectedOptions: Object.keys(selectedOptions).length > 0 ? selectedOptions : undefined,
             });
             draftResponses.delete(currentRequestId);
         }
 
-        // Reset selection state
-        selectedOptionsMap.clear();
-        groupMultiSelectMap.clear();
-        normalizedGroups = [];
-        currentStepIndex = 0;
+        // Reset stepper
+        if (activeOptionsStepper) {
+            activeOptionsStepper.destroy();
+            activeOptionsStepper = null;
+        }
 
         currentAttachments = [];
         // Don't show home - the extension will send showCurrentSession or showSessionDetail

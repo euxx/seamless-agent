@@ -131,6 +131,7 @@ export const strings = {
     get question() { return localize('detail.question'); },
     get response() { return localize('detail.response'); },
     get noResponse() { return localize('detail.noResponse'); },
+    get options() { return localize('detail.options'); },
 
     // History filters
     get historyFilterAll() { return localize('history.filter.all'); },

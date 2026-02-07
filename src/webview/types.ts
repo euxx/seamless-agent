@@ -15,6 +15,8 @@ export interface StoredInteraction {
     response?: string;
     attachments?: string[];
     agentName?: string;
+    options?: AskUserOptions;
+    selectedOptionLabels?: Record<string, string[]>;
 
     // For plan_review
     plan?: string;
@@ -147,7 +149,8 @@ export type FromWebviewMessage = | {
     type: 'submit';
     response: string;
     requestId: string;
-    attachments: AttachmentInfo[]
+    attachments: AttachmentInfo[];
+    selectedOptions?: Record<string, string[]>;
 }
     | {
         type: 'cancel';
