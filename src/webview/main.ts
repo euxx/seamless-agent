@@ -1527,32 +1527,27 @@ import { truncate } from './utils';
         for (const entry of entries) {
             const isPlanReview = entry.type === 'plan_review';
             const icon = isPlanReview ? 'file-text' : 'comment';
+            const typeIcon = codicon(icon);
             const statusClass = entry.status || 'pending';
 
             const itemClasses = batchSelectMode ? 'history-item batch-mode' : 'history-item';
             const item = el('div', {
                 className: itemClasses,
-                attrs: { 'data-id': entry.id, 'data-type': entry.type, tabindex: '0' }
+                attrs: {
+                    'data-id': entry.id,
+                    'data-type': entry.type,
+                    'tabindex': '0'
+                }
             });
 
-            // View button (magnifier) - visible on hover or in batch mode
-            const viewBtn = el('button', {
-                className: 'history-item-view',
-                title: window.__STRINGS__?.openInPanel || 'View',
-                attrs: { type: 'button' }
-            }, codicon('search'));
-            item.appendChild(viewBtn);
-
+            // First line: title + time (+ status for plan reviews)
             const header = el('div', { className: 'history-item-header' });
-            const title = el('span', { className: 'history-item-title', text: entry.title });
-            const deleteBtn = el('button', {
-                className: 'history-item-delete',
-                title: 'Remove',
-                attrs: { type: 'button', 'data-id': entry.id }
-            }, codicon('trash'));
-            appendChildren(header, codicon(icon), ' ', title, deleteBtn);
 
-            const preview = el('div', { className: 'history-item-preview', text: entry.preview });
+            const content = el('div', { className: 'history-item-content' });
+            const title = el('div', { className: 'history-item-title', text: entry.title });
+            content.appendChild(title);
+
+            // Meta: time + status badge (inline on first line)
             const meta = el('div', { className: 'history-item-meta' });
             const time = el('span', { className: 'history-item-time', text: formatTime(entry.timestamp) });
 
@@ -1561,14 +1556,34 @@ import { truncate } from './utils';
                     className: `status-badge status-${statusClass}`,
                     text: getStatusLabel(entry.status)
                 });
-                appendChildren(meta, statusBadge, ' ', time);
-            }
-
-            else {
                 appendChildren(meta, time);
+            } else {
+                meta.appendChild(time);
             }
 
-            appendChildren(item, header, preview, meta);
+            // Action buttons (shown on hover)
+            const deleteBtn = el('button', {
+                className: 'history-item-delete',
+                title: 'Delete',
+                attrs: { type: 'button', 'data-id': entry.id }
+            }, codicon('trash'));
+
+            const viewBtn = el('button', {
+                className: 'history-item-view',
+                title: 'View Detail',
+                attrs: { type: 'button' }
+            }, codicon('go-to-file'));
+
+            appendChildren(header, content, meta, viewBtn, deleteBtn);
+
+            // Second line: preview text
+            const preview = el('div', { className: 'history-item-preview', text: entry.preview });
+
+            // Wrapper for content rows
+            const contentWrapper = el('div', { className: 'history-item-content' });
+            appendChildren(contentWrapper, header, preview);
+
+            appendChildren(item, typeIcon, contentWrapper);
             fragment.appendChild(item);
         }
 
