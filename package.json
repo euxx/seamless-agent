@@ -4,7 +4,7 @@
   "private": true,
   "displayName": "Seamless Agent",
   "description": "Language Model tool that requires AI agents to confirm with users before completing tasks",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "icon": "resources/icon.png",
   "author": "jraylan",
   "contributors": [
@@ -170,14 +170,24 @@
                   "description": "Flat list of simple choices (strings or {label, description} objects).",
                   "items": {
                     "oneOf": [
-                      { "type": "string" },
+                      {
+                        "type": "string"
+                      },
                       {
                         "type": "object",
                         "properties": {
-                          "label": { "type": "string", "description": "The display label for the option button" },
-                          "description": { "type": "string", "description": "Optional description shown below the label" }
+                          "label": {
+                            "type": "string",
+                            "description": "The display label for the option button"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Optional description shown below the label"
+                          }
                         },
-                        "required": ["label"]
+                        "required": [
+                          "label"
+                        ]
                       }
                     ]
                   }
@@ -188,26 +198,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                      "title": { "type": "string", "description": "Group title displayed above the options" },
+                      "title": {
+                        "type": "string",
+                        "description": "Group title displayed above the options"
+                      },
                       "options": {
                         "type": "array",
                         "items": {
                           "oneOf": [
-                            { "type": "string" },
+                            {
+                              "type": "string"
+                            },
                             {
                               "type": "object",
                               "properties": {
-                                "label": { "type": "string" },
-                                "description": { "type": "string" }
+                                "label": {
+                                  "type": "string"
+                                },
+                                "description": {
+                                  "type": "string"
+                                }
                               },
-                              "required": ["label"]
+                              "required": [
+                                "label"
+                              ]
                             }
                           ]
                         }
                       },
-                      "multiSelect": { "type": "boolean", "description": "Allow multiple selections. Default: false" }
+                      "multiSelect": {
+                        "type": "boolean",
+                        "description": "Allow multiple selections. Default: false"
+                      }
                     },
-                    "required": ["title", "options"]
+                    "required": [
+                      "title",
+                      "options"
+                    ]
                   }
                 }
               ]

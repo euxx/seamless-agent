@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.1.22](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.21...seamless-agent-v0.1.22) (2026-02-10)
+
+
+### Features
+
+* **ask-user:** add clickable option buttons for user responses ([300bf7b](https://github.com/jraylan/seamless-agent/commit/300bf7ba1ae4867bc6a0b85564d18bf984863fb9))
+* **ask-user:** add clickable option buttons for user responses ([94e1827](https://github.com/jraylan/seamless-agent/commit/94e182749708626546134f66ead40020ad4fbc6c))
+* **ask-user:** combine selected options and typed response in submit ([2e90e23](https://github.com/jraylan/seamless-agent/commit/2e90e232b000e086f6852115b40c59a006aa19c5))
+* **ask-user:** handle JSON string options ([3e4edb8](https://github.com/jraylan/seamless-agent/commit/3e4edb81c0f68b0c29d6cdb906853f3afc64902e))
+* **ask-user:** improve response clarity ([d3ebad9](https://github.com/jraylan/seamless-agent/commit/d3ebad9ed78dbed8e289d45ef796ebd3bea5b73e))
+* **askUser:** single-line option layout with smart width and scroll ([6a1ef8f](https://github.com/jraylan/seamless-agent/commit/6a1ef8f4bd2b4b5d18c56d6ba7cd623e137581fb))
+
+
+### Bug Fixes
+
+* add overflow-wrap to option button text to prevent overflow ([ebdbf65](https://github.com/jraylan/seamless-agent/commit/ebdbf65002e7f701b31b2d3bf03124bed81d55ae))
+* address code review feedback for options feature ([93743a3](https://github.com/jraylan/seamless-agent/commit/93743a3a0e2666f26d22f699cbf19cfe87d6b85a))
+* use top-level oneOf in options schema to prevent mixed types ([3993802](https://github.com/jraylan/seamless-agent/commit/3993802d69773625fca411e63801fbe868443fc3))
+
+
+### Code Refactoring
+
+* unify options stepper for pending and history views ([9f8d8ae](https://github.com/jraylan/seamless-agent/commit/9f8d8ae9597d7c02f54c037f0a9c56e04f0aeab4))
+
 ## [0.1.21](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.20...seamless-agent-v0.1.21) (2026-02-03)
 
 
