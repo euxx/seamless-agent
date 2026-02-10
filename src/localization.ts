@@ -161,6 +161,10 @@ export const strings = {
     // Options
     get orTypeYourOwn() { return localize('console.orTypeYourOwn'); },
 
+    // Response labels
+    get selectedOptionsLabel() { return localize('response.selectedOptions'); },
+    get additionalResponseLabel() { return localize('response.additionalResponse'); },
+
     // Errors
     get noSuchInteraction() { return localize('error.noSuchInteraction'); },
 };

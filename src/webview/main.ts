@@ -148,6 +148,9 @@ declare global {
             // Options
             orTypeYourOwn: string;
             options: string;
+            // Response labels
+            selectedOptionsLabel: string;
+            additionalResponseLabel: string;
         };
         __CONFIG__: {
             historyTimeDisplay: 'relative' | 'absolute' | 'hybrid';
@@ -1848,12 +1851,19 @@ import { truncate } from './utils';
         const typedResponse = responseInput?.value.trim() || '';
         const selectedResponse = activeOptionsStepper?.getSelectedResponse() || '';
 
-        // Combine selected options and typed response
+        // Combine selected options and typed response with clear labels
         let response = '';
         if (selectedResponse && typedResponse) {
-            response = `${selectedResponse}\n\n${typedResponse}`;
+            // Both options and text input: add clear labels
+            const selectedLabel = window.__STRINGS__?.selectedOptionsLabel || 'Selected options:';
+            const additionalLabel = window.__STRINGS__?.additionalResponseLabel || 'Additional response:';
+            response = `${selectedLabel}\n${selectedResponse}\n\n${additionalLabel}\n${typedResponse}`;
+        } else if (selectedResponse) {
+            // Only options: keep as-is
+            response = selectedResponse;
         } else {
-            response = selectedResponse || typedResponse;
+            // Only text: keep as-is
+            response = typedResponse;
         }
 
         // Build selectedOptions map for storage
