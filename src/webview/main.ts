@@ -1543,9 +1543,9 @@ import { truncate } from './utils';
             // First line: title + time (+ status for plan reviews)
             const header = el('div', { className: 'history-item-header' });
 
-            const content = el('div', { className: 'history-item-content' });
+            const titleWrapper = el('div', { className: 'history-item-title-wrapper' });
             const title = el('div', { className: 'history-item-title', text: entry.title });
-            content.appendChild(title);
+            titleWrapper.appendChild(title);
 
             // Meta: time + status badge (inline on first line)
             const meta = el('div', { className: 'history-item-meta' });
@@ -1574,7 +1574,7 @@ import { truncate } from './utils';
                 attrs: { type: 'button' }
             }, codicon('go-to-file'));
 
-            appendChildren(header, content, meta, viewBtn, deleteBtn);
+            appendChildren(header, titleWrapper, meta, viewBtn, deleteBtn);
 
             // Second line: preview text
             const preview = el('div', { className: 'history-item-preview', text: entry.preview });

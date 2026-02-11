@@ -1640,6 +1640,13 @@ button:disabled {
     padding-right: 8px;
 }
 
+.history-item-title-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
 .history-item-title {
     font-weight: 400;
     font-size: 0.9em;
