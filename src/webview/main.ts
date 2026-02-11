@@ -1556,7 +1556,7 @@ import { truncate } from './utils';
                     className: `status-badge status-${statusClass}`,
                     text: getStatusLabel(entry.status)
                 });
-                appendChildren(meta, time);
+                appendChildren(meta, time, statusBadge);
             } else {
                 meta.appendChild(time);
             }
@@ -1564,13 +1564,13 @@ import { truncate } from './utils';
             // Action buttons (shown on hover)
             const deleteBtn = el('button', {
                 className: 'history-item-delete',
-                title: 'Delete',
+                title: window.__STRINGS__?.deleteChat || 'Delete',
                 attrs: { type: 'button', 'data-id': entry.id }
             }, codicon('trash'));
 
             const viewBtn = el('button', {
                 className: 'history-item-view',
-                title: 'View Detail',
+                title: window.__STRINGS__?.openInPanel || 'View Detail',
                 attrs: { type: 'button' }
             }, codicon('go-to-file'));
 
@@ -1580,7 +1580,7 @@ import { truncate } from './utils';
             const preview = el('div', { className: 'history-item-preview', text: entry.preview });
 
             // Wrapper for content rows
-            const contentWrapper = el('div', { className: 'history-item-content' });
+            const contentWrapper = el('div', { className: 'history-item-body' });
             appendChildren(contentWrapper, header, preview);
 
             appendChildren(item, typeIcon, contentWrapper);
