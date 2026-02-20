@@ -275,7 +275,8 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             requestId: item.id,
             options: item.options,
             pendingCount: this._pendingRequests.size,
-            requestOrder
+            requestOrder,
+            attachments: item.attachments
         };
         this._view?.webview.postMessage(message);
     }

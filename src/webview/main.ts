@@ -831,12 +831,19 @@ import { truncate } from './utils';
     /**
  * Show the question form and hide other views
  */
-    function showQuestion(question: string, title: string, requestId: string, options?: any[], pendingCount?: number, requestOrder?: number): void {
+    function showQuestion(question: string, title: string, requestId: string, options?: any[], pendingCount?: number, requestOrder?: number, attachments?: AttachmentInfo[]): void {
         if (responseInput && currentRequestId && currentRequestId !== requestId) {
             draftResponses.set(currentRequestId, responseInput.value);
         }
 
         currentRequestId = requestId;
+
+        // Update attachments for this specific request
+        if (attachments) {
+            currentAttachments = attachments;
+        } else {
+            currentAttachments = [];
+        }
 
         // Reset previous stepper instance
         if (activeOptionsStepper) {
@@ -2704,7 +2711,7 @@ import { truncate } from './utils';
         const message = event.data;
 
         switch (message.type) {
-            case 'showQuestion': showQuestion(message.question, message.title, message.requestId, message.options, message.pendingCount, message.requestOrder);
+            case 'showQuestion': showQuestion(message.question, message.title, message.requestId, message.options, message.pendingCount, message.requestOrder, message.attachments);
                 break;
             case 'showList': showList(message.requests, message.selectedRequestId);
                 break;

@@ -110,6 +110,7 @@ export type ToWebviewMessage = | {
     options?: AskUserOptions;
     pendingCount?: number;
     requestOrder?: number; // The order number (1-based) of this request
+    attachments?: AttachmentInfo[]; // Attachments for this specific request
 }
     | {
         type: 'showList';
