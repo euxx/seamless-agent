@@ -1343,6 +1343,8 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{dropImageHere}}': strings.dropImageHere,
             '{{lastOpened}}': strings.lastOpened,
             '{{pendingCount}}': strings.pendingCount,
+            '{{dragToResize}}': strings.dragToResize,
+            '{{delete}}': strings.delete,
             // Session history strings
             '{{recentSessions}}': strings.recentSessions,
             '{{noRecentSessions}}': strings.noRecentSessions,
@@ -1350,6 +1352,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{sessionInput}}': strings.sessionInput,
             '{{sessionOutput}}': strings.sessionOutput,
             '{{addFolder}}': strings.addFolder,
+            '{{viewDetail}}': strings.viewDetail,
             // Chat history & Plan Review strings
             '{{pendingReviews}}': strings.pendingReviews,
             '{{noPendingReviews}}': strings.noPendingReviews,
