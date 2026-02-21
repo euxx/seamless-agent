@@ -10,8 +10,7 @@
 
 ### Bug Fixes
 
-* add missing localization strings ([6ad1310](https://github.com/jraylan/seamless-agent/commit/6ad131008ff81a9062366257090e25fe95bbff69))
-* add missing localization strings (2) ([1fe3ae8](https://github.com/jraylan/seamless-agent/commit/1fe3ae83be73d07be28af93cd8b98461704fc4d5))
+* add missing localization strings ([6ad1310](https://github.com/jraylan/seamless-agent/commit/6ad131008ff81a9062366257090e25fe95bbff69), [1fe3ae8](https://github.com/jraylan/seamless-agent/commit/1fe3ae83be73d07be28af93cd8b98461704fc4d5))
 
 ## [0.1.23](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.22...seamless-agent-v0.1.23) (2026-02-21)
 
