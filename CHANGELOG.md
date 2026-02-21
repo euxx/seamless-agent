@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.23](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.22...seamless-agent-v0.1.23) (2026-02-21)
+
+
+### Features
+
+* add draggable resize handle for ask_user textarea ([8879a51](https://github.com/jraylan/seamless-agent/commit/8879a51184190d0cfcc8b15a96fd1164d9a22714))
+* add draggable resize handle for ask_user textarea ([4f5baa9](https://github.com/jraylan/seamless-agent/commit/4f5baa980457fec75e550194dcbf131b02f628ae))
+* implement compact list design for history view ([8371f22](https://github.com/jraylan/seamless-agent/commit/8371f22e86bbad32f111ad4ae93849617e4fae4a))
+* implement compact list design for history view ([1831c7b](https://github.com/jraylan/seamless-agent/commit/1831c7bb7334ea66ff9545074264d08b798b6e83))
+* implement Ctrl and Shift selection in batch mode ([bcb5c5f](https://github.com/jraylan/seamless-agent/commit/bcb5c5fe661197eace591ff408166da9c2894259))
+* improve batch selection UX with toggle selection and empty area clear ([114ef63](https://github.com/jraylan/seamless-agent/commit/114ef63a33748d04c3cd24e449239be02f1cabe4))
+* **input-history:** add InputHistoryManager with navigation and persistence functionality ([e8d15fc](https://github.com/jraylan/seamless-agent/commit/e8d15fc07f87df8e023a9db27ddc23b2d61c8de3))
+* **input-history:** implement input history management with navigation and persistence ([307142d](https://github.com/jraylan/seamless-agent/commit/307142d451133f9b83ed2a430ae997a0eafef002))
+* **input-history:** integrate InputHistoryManager for improved input history management ([561c4b2](https://github.com/jraylan/seamless-agent/commit/561c4b216231b00ca6897fb0deee2cc8885ec6d2))
+
+
+### Bug Fixes
+
+* address PR review comments ([1a79e6b](https://github.com/jraylan/seamless-agent/commit/1a79e6b7c724669a48b252a008e81e842a36ff9e))
+* improve visibility detection for shift-click range selection ([670331f](https://github.com/jraylan/seamless-agent/commit/670331f70a14dbb6e5b3b1d1479fc80f337654fa))
+* preserve batch selection UI during delete confirmation ([f637124](https://github.com/jraylan/seamless-agent/commit/f6371247bba454c08274dde0b900996e36f0603a))
+* resolve layout issue causing title and preview to appear on same line ([4a8f2cc](https://github.com/jraylan/seamless-agent/commit/4a8f2cc30b0b510fd4d496c7c08f5afcf2044789))
+
 ## [0.1.22](https://github.com/jraylan/seamless-agent/compare/seamless-agent-v0.1.21...seamless-agent-v0.1.22) (2026-02-10)
 
 
