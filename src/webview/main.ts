@@ -3040,7 +3040,10 @@ import { truncate } from './utils';
         switch (message.type) {
             case 'showQuestion': showQuestion(message.question, message.title, message.requestId, message.options, message.pendingCount, message.requestOrder, message.attachments);
                 break;
-            case 'showList': showList(message.requests, message.selectedRequestId);
+            case 'showList': if (message.requests && message.requests.length > 0) {
+                switchTab('pending');
+            }
+                showList(message.requests, message.selectedRequestId);
                 break;
             case 'updatePendingCount': updatePendingCountBadge(message.count, message.requestOrder);
                 break;
