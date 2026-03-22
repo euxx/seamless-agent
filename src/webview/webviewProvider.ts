@@ -36,6 +36,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         {
             item: RequestItem;
             resolve: (result: UserResponseResult) => void;
+            sharedResolvers: Array<(result: UserResponseResult) => void>;
         }
 
     > = new Map();
@@ -237,6 +238,36 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             }
         }
 
+        // Deduplication: if a semantically identical request is already pending AND was
+        // created recently (within DEDUP_WINDOW_MS), share it instead of creating a new
+        // UI entry. This collapses parallel/retry duplicates from the same agent invocation
+        // while avoiding accidental merges of semantically independent sequential questions.
+        // Key: question + agentName + title + options + multiSelect.
+        // Debug requests (isDebug=true) are always excluded from deduplication.
+        const DEDUP_WINDOW_MS = 3 * 60_000; // 3 minutes
+        const normalizedTitle = title || strings.confirmationRequired;
+        const normalizedMultiSelect = multiSelect ?? false;
+        const serializedOptions = JSON.stringify(options);
+        if (question && agentName && !isDebug) {
+            const now = Date.now();
+            const existingEntry = [...this._pendingRequests.entries()]
+                .find(([_, p]) => !p.item.isDebug
+                    && p.item.question === question
+                    && p.item.agentName === agentName
+                    && p.item.title === normalizedTitle
+                    && JSON.stringify(p.item.options) === serializedOptions
+                    && (p.item.multiSelect ?? false) === normalizedMultiSelect
+                    && (now - p.item.createdAt) < DEDUP_WINDOW_MS
+                );
+            if (existingEntry) {
+                const [existingId, existingPending] = existingEntry;
+                Logger.log(`[waitForUserResponse] Dedup: sharing existing request ${existingId}`);
+                return new Promise<UserResponseResult>((resolve) => {
+                    existingPending.sharedResolvers.push(resolve);
+                });
+            }
+        }
+
         // Generate unique ID for this request
         const req = requestId ?? `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
@@ -256,7 +287,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 isDebug,
             };
 
-            this._pendingRequests.set(req, { item, resolve });
+            this._pendingRequests.set(req, { item, resolve, sharedResolvers: [] });
 
             // Update badge count
             this._setBadge(this._pendingRequests.size);
@@ -299,9 +330,9 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         const pending = this._pendingRequests.get(requestId);
         if (!pending) return false;
 
-        pending.resolve({
-            responded: false, response: reason, attachments: []
-        });
+        const cancelledResult: UserResponseResult = { responded: false, response: reason, attachments: [] };
+        pending.resolve(cancelledResult);
+        for (const r of pending.sharedResolvers) r(cancelledResult);
         this._pendingRequests.delete(requestId);
 
         // Clear last opened if this was the last opened request
@@ -332,9 +363,9 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
      */
     public cancelAllRequests(reason: string = strings.cancelled): void {
         for (const [id, pending] of this._pendingRequests) {
-            pending.resolve({
-                responded: false, response: reason, attachments: []
-            });
+            const cancelledResult: UserResponseResult = { responded: false, response: reason, attachments: [] };
+            pending.resolve(cancelledResult);
+            for (const r of pending.sharedResolvers) r(cancelledResult);
         }
 
         this._pendingRequests.clear();
@@ -1165,6 +1196,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             };
 
             pending.resolve(cleanResult);
+            for (const r of pending.sharedResolvers) r(cleanResult);
             this._pendingRequests.delete(requestId);
 
             // Clear selected request if it was just resolved
