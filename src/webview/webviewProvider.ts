@@ -1554,6 +1554,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{debugMockAskUserOptions}}': strings.debugMockAskUserOptions,
             '{{debugMockAskUserMultiStep}}': strings.debugMockAskUserMultiStep,
             '{{debugMockAskUserMultiStepLongText}}': strings.debugMockAskUserMultiStepLongText,
+            '{{debugMockAskUserDedupTest}}': strings.debugMockAskUserDedupTest,
             '{{debugMockPlanReview}}': strings.debugMockPlanReview,
             '{{debugMockWalkthroughReview}}': strings.debugMockWalkthroughReview,
             '{{enableToolDebug}}': String(enableToolDebug),
