@@ -52,6 +52,9 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
     // Last opened request (for sorting in list view) - persists until request is resolved
     private _lastOpenedRequestId: string | null = null;
 
+    // Track whether the current hidden pending burst has already shown a notification.
+    private _hasShownHiddenPendingNotification: boolean = false;
+
     // Interaction history
     private _recentInteractions: ToolCallInteraction[] = [];
 
@@ -120,6 +123,12 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         // Handle messages from the webview
         webviewView.webview.onDidReceiveMessage((message: FromWebviewMessage) => {
             void this._handleWebviewMessage(message);
+        }, undefined, []);
+
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible) {
+                this._hasShownHiddenPendingNotification = false;
+            }
         }, undefined, []);
 
         // Listen for config changes and forward to webview
@@ -347,7 +356,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
 
             // Show notification only if panel is not already visible
             if (!this._view?.visible) {
-                this._showNotification();
+                this._maybeShowNotification();
             }
         });
     }
@@ -382,6 +391,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 type: 'clear'
             });
             this._selectedRequestId = null;
+            this._hasShownHiddenPendingNotification = false;
         }
 
         return true;
@@ -424,6 +434,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         this._pendingRequests.clear();
         this._setBadge(0);
         this._lastOpenedRequestId = null;
+        this._hasShownHiddenPendingNotification = false;
 
         this._view?.webview.postMessage({
             type: 'clear'
@@ -1271,6 +1282,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             }
 
             else {
+                this._hasShownHiddenPendingNotification = false;
                 this._showHome();
             }
         }
@@ -1386,6 +1398,15 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                     vscode.commands.executeCommand('seamlessAgentView.focus');
                 }
             });
+    }
+
+    private _maybeShowNotification(): void {
+        if (this._view?.visible || this._hasShownHiddenPendingNotification) {
+            return;
+        }
+
+        this._hasShownHiddenPendingNotification = true;
+        this._showNotification();
     }
 
     // ========================
